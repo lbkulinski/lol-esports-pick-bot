@@ -7,6 +7,7 @@ import net.lbku.model.serialization.StringToBooleanConverter;
 import net.lbku.model.serialization.StringToInstantConverter;
 
 import java.time.Instant;
+import java.util.Base64;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Game(
@@ -30,4 +31,10 @@ public record Game(
     @JsonAlias("VOD")
     String vod
 ) {
+    public Game {
+        byte[] bytes = id.getBytes();
+
+        id = Base64.getEncoder()
+                   .encodeToString(bytes);
+    }
 }

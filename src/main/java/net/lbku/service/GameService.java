@@ -66,9 +66,7 @@ public final class GameService {
 
                                           String encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
 
-                                          String string = "%s=%s".formatted(key, encodedValue);
-
-                                          return string;
+                                          return "%s=%s".formatted(key, encodedValue);
                                       })
                                       .reduce("%s&%s"::formatted)
                                       .get();
@@ -115,10 +113,6 @@ public final class GameService {
 
         List<Game> games = gameResponse.games();
 
-        List<Game> copy = new ArrayList<>(games);
-
-        copy.sort(Comparator.comparing(Game::timestamp));
-
-        return List.copyOf(copy);
+        return List.copyOf(games);
     }
 }
