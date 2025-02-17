@@ -19,9 +19,9 @@ public record Game(
     @JsonAlias("Tournament")
     String tournament,
 
-    @JsonAlias("_DateTime.20.UTC")
+    @JsonAlias("DateTime UTC")
     @JsonDeserialize(converter = StringToInstantConverter.class)
-    Instant instant,
+    Instant timestamp,
 
     @JsonAlias("PlayerWin")
     @JsonDeserialize(converter = StringToBooleanConverter.class)

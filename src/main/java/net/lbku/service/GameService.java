@@ -2,41 +2,84 @@ package net.lbku.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import net.lbku.model.Champion;
 import net.lbku.model.Game;
 import net.lbku.model.GameResponse;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public final class GameService {
-    public List<Game> getGames(Champion champion) {
-        String template = """
-        https://lol.fandom.com//api.php\
-        ?maxlag=5\
-        &tables=%s\
-        &limit=500\
-        &format=json\
-        &order_by=ScoreboardPlayers.DateTime_UTC+DESC\
-        &action=cargoquery\
-        &where=ScoreboardPlayers.Champion='%s'\
-        &fields=%s\
-        &join_on=ScoreboardPlayers.GameId=ScoreboardGames.GameId""";
+    private final ObjectMapper mapper;
 
-        Set<String> tables = Set.of("ScoreboardPlayers", "ScoreboardGames");
+    @Inject
+    public GameService(ObjectMapper mapper) {
+        this.mapper = Objects.requireNonNull(mapper);
+    }
 
-        Set<String> fields = Set.of("ScoreboardPlayers.GameId", "ScoreboardPlayers.Link", "ScoreboardGames.Tournament",
-            "ScoreboardPlayers.DateTime_UTC", "ScoreboardPlayers.PlayerWin", "ScoreboardGames.VOD");
+    private URI buildUri(Champion champion) {
+        Objects.requireNonNull(champion);
 
-        String uriString = template.formatted(String.join(",", tables), champion,
-            String.join(",", fields));
+        Set<String> tables = Set.of(
+            "ScoreboardPlayers",
+            "ScoreboardGames"
+        );
 
-        URI uri = URI.create(uriString);
+        String where = """
+        ScoreboardPlayers.Champion = '%s' \
+        AND ScoreboardGames.VOD IS NOT NULL AND ScoreboardGames.VOD != ''""".formatted(champion);
+
+        Set<String> fields = Set.of(
+            "ScoreboardPlayers.GameId",
+            "ScoreboardPlayers.Link",
+            "ScoreboardGames.Tournament",
+            "ScoreboardPlayers.DateTime_UTC",
+            "ScoreboardPlayers.PlayerWin",
+            "ScoreboardGames.VOD"
+        );
+
+        Map<String, String> queryParameters = Map.of(
+            "maxlag", "5",
+            "tables", String.join(",", tables),
+            "limit", "50",
+            "format", "json",
+            "order_by", "ScoreboardPlayers.DateTime_UTC DESC",
+            "action", "cargoquery",
+            "where", where,
+            "fields", String.join(",",  fields),
+            "join_on", "ScoreboardPlayers.GameId=ScoreboardGames.GameId"
+        );
+
+        String query = queryParameters.entrySet()
+                                      .stream()
+                                      .map(entry -> {
+                                          String key = entry.getKey();
+
+                                          String value = entry.getValue();
+
+                                          String encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
+
+                                          String string = "%s=%s".formatted(key, encodedValue);
+
+                                          return string;
+                                      })
+                                      .reduce("%s&%s"::formatted)
+                                      .get();
+
+        String uriString = "https://lol.fandom.com/api.php?%s".formatted(query);
+
+        return URI.create(uriString);
+    }
+
+    private String getJsonData(URI uri) {
+        Objects.requireNonNull(uri);
 
         HttpRequest request = HttpRequest.newBuilder(uri)
                                          .GET()
@@ -52,22 +95,30 @@ public final class GameService {
             throw new RuntimeException(e);
         }
 
-        String body = response.body();
+        return response.body();
+    }
 
-        System.out.println(body);
+    public List<Game> getGames(Champion champion) {
+        Objects.requireNonNull(champion);
 
-        ObjectMapper mapper = new ObjectMapper();
+        URI uri = this.buildUri(champion);
+
+        String jsonData = this.getJsonData(uri);
 
         GameResponse gameResponse;
 
         try {
-            gameResponse = mapper.readValue(body, GameResponse.class);
+            gameResponse = this.mapper.readValue(jsonData, GameResponse.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
         List<Game> games = gameResponse.games();
 
-        return List.copyOf(games);
+        List<Game> copy = new ArrayList<>(games);
+
+        copy.sort(Comparator.comparing(Game::timestamp));
+
+        return List.copyOf(copy);
     }
 }
