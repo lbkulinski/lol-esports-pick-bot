@@ -4,7 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import net.lbku.model.Champion;
 import net.lbku.module.ApplicationModule;
-import net.lbku.service.PickService;
+import net.lbku.service.GameService;
 
 public class Application {
     public static void main(String[] args) {
@@ -12,8 +12,9 @@ public class Application {
 
         Injector injector = Guice.createInjector(module);
 
-        PickService pickService = injector.getInstance(PickService.class);
+        GameService gameService = injector.getInstance(GameService.class);
 
-        System.out.println(pickService.getPicks(Champion.DRAVEN));
+        gameService.getGames(Champion.DRAVEN)
+                   .forEach(System.out::println);
     }
 }
