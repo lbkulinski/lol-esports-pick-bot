@@ -7,6 +7,7 @@ import com.google.inject.Injector;
 import net.lbku.module.ApplicationModule;
 import net.lbku.service.PostService;
 
+@SuppressWarnings("unused")
 public class NotificationHandler implements RequestHandler<Void, Void> {
     @Override
     public Void handleRequest(Void unused, Context context) {
