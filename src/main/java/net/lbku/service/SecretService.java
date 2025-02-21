@@ -21,16 +21,16 @@ public final class SecretService {
         this.mapper = Objects.requireNonNull(mapper);
     }
 
-    public String getSecret(String name) {
-        Objects.requireNonNull(name);
+    public String getSecret(String id) {
+        Objects.requireNonNull(id);
 
-        String secretName = System.getenv("SECRET_NAME");
+        String secretId = System.getenv("SECRET_ID");
 
-        if (secretName == null) {
-            throw new IllegalStateException("SECRET_NAME is not set");
+        if (secretId == null) {
+            throw new IllegalStateException("SECRET_ID is not set");
         }
 
-        String secret = this.secretCache.getSecretString(secretName);
+        String secret = this.secretCache.getSecretString(secretId);
 
         TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
 
@@ -42,10 +42,10 @@ public final class SecretService {
             throw new RuntimeException(e);
         }
 
-        String value = secretMap.get(name);
+        String value = secretMap.get(id);
 
         if (value == null) {
-            throw new IllegalStateException("Secret %s not found".formatted(name));
+            throw new IllegalStateException("Secret ID %s not found".formatted(id));
         }
 
         return value;
