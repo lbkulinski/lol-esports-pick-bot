@@ -20,7 +20,7 @@ jobs:
       - name: Install Maven Dependencies
         run: mvn clean package
       - name: Zip Lambda Package
-        run: zip -r function.zip target/*.jar
+        run: zip -r function.zip target/lol-esports-pick-bot-1.0-SNAPSHOT.jar
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
