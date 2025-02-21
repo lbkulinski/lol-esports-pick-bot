@@ -9,7 +9,7 @@ import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
 import com.google.inject.Inject;
-import net.lbku.config.BotConfiguration;
+import net.lbku.service.SecretService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public final class TwitterClient {
-    private final BotConfiguration configuration;
+    private final SecretService secretService;
 
     private static final Logger LOGGER;
 
@@ -27,8 +27,8 @@ public final class TwitterClient {
     }
 
     @Inject
-    public TwitterClient(BotConfiguration configuration) {
-        this.configuration = Objects.requireNonNull(configuration);
+    public TwitterClient(SecretService secretService) {
+        this.secretService = Objects.requireNonNull(secretService);
     }
 
     private OAuth10aService getService(String consumerKey, String consumerSecret) {
@@ -62,9 +62,9 @@ public final class TwitterClient {
     }
 
     public TweetStatus postTweet(String text) {
-        String token = this.configuration.twitterAccessToken();
+        String token = this.secretService.getSecret("TWITTER_ACCESS_TOKEN");
 
-        String tokenSecret = this.configuration.twitterAccessSecret();
+        String tokenSecret = this.secretService.getSecret("TWITTER_ACCESS_SECRET");
 
         OAuth1AccessToken accessToken = new OAuth1AccessToken(token, tokenSecret);
 
@@ -79,9 +79,9 @@ public final class TwitterClient {
             "text": "%s"
         }""".formatted(text));
 
-        String consumerKey = this.configuration.twitterConsumerKey();
+        String consumerKey = this.secretService.getSecret("TWITTER_CONSUMER_KEY");
 
-        String consumerSecret = this.configuration.twitterConsumerSecret();
+        String consumerSecret = this.secretService.getSecret("TWITTER_CONSUMER_SECRET");
 
         Response response;
 

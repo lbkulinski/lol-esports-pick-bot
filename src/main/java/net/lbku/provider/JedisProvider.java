@@ -2,7 +2,7 @@ package net.lbku.provider;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import net.lbku.config.BotConfiguration;
+import net.lbku.service.SecretService;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
@@ -11,22 +11,24 @@ import redis.clients.jedis.UnifiedJedis;
 import java.util.Objects;
 
 public final class JedisProvider implements Provider<UnifiedJedis> {
-    private final BotConfiguration configuration;
+    private final SecretService secretService;
 
     @Inject
-    public JedisProvider(BotConfiguration configuration) {
-        this.configuration = Objects.requireNonNull(configuration);
+    public JedisProvider(SecretService secretService) {
+        this.secretService = Objects.requireNonNull(secretService);
     }
 
     @Override
     public UnifiedJedis get() {
-        String user = this.configuration.redisUser();
+        String user = this.secretService.getSecret("REDIS_USER");
 
-        String password = this.configuration.redisPassword();
+        String password = this.secretService.getSecret("REDIS_PASSWORD");
 
-        String host = this.configuration.redisHost();
+        String host = this.secretService.getSecret("REDIS_HOST");
 
-        int port = this.configuration.redisPort();
+        String portString = this.secretService.getSecret("REDIS_PORT");
+
+        int port = Integer.parseInt(portString);
 
         HostAndPort hostAndPort = new HostAndPort(host, port);
 
