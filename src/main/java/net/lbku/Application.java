@@ -3,7 +3,7 @@ package net.lbku;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import net.lbku.module.ApplicationModule;
-import net.lbku.service.BlueskyService;
+import net.lbku.service.PostService;
 
 public class Application {
     public static void main(String[] args) {
@@ -11,8 +11,8 @@ public class Application {
 
         Injector injector = Guice.createInjector(module);
 
-        BlueskyService blueskyService = injector.getInstance(BlueskyService.class);
+        PostService service = injector.getInstance(PostService.class);
 
-        blueskyService.postNewGames();
+        service.postNewGames();
     }
 }

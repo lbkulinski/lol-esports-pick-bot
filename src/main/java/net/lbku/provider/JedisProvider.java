@@ -1,39 +1,32 @@
 package net.lbku.provider;
 
+import com.google.inject.Inject;
 import com.google.inject.Provider;
+import net.lbku.config.BotConfiguration;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.UnifiedJedis;
 
+import java.util.Objects;
+
 public final class JedisProvider implements Provider<UnifiedJedis> {
+    private final BotConfiguration configuration;
+
+    @Inject
+    public JedisProvider(BotConfiguration configuration) {
+        this.configuration = Objects.requireNonNull(configuration);
+    }
+
     @Override
     public UnifiedJedis get() {
-        String user = System.getenv("REDIS_USER");
+        String user = this.configuration.redisUser();
 
-        if (user == null) {
-            throw new RuntimeException("the REDIS_USER environment variable is not set");
-        }
+        String password = this.configuration.redisPassword();
 
-        String password = System.getenv("REDIS_PASSWORD");
+        String host = this.configuration.redisHost();
 
-        if (password == null) {
-            throw new RuntimeException("the REDIS_PASSWORD environment variable is not set");
-        }
-
-        String host = System.getenv("REDIS_HOST");
-
-        if (host == null) {
-            throw new RuntimeException("the REDIS_HOST environment variable is not set");
-        }
-
-        String portString = System.getenv("REDIS_PORT");
-
-        if (portString == null) {
-            throw new RuntimeException("the REDIS_PORT environment variable is not set");
-        }
-
-        int port = Integer.parseInt(portString);
+        int port = this.configuration.redisPort();
 
         HostAndPort hostAndPort = new HostAndPort(host, port);
 
