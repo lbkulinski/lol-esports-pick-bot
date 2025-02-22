@@ -27,6 +27,8 @@ jobs:
         run: mv target/***-1.0-SNAPSHOT-all.jar target/function.jar
       - name: Zip Lambda Package
         run: zip function.zip target/function.jar
+      - name: Unzip Lambda Package
+        run: unzip -l function.zip
       - name: Deploy Lambda
         uses: appleboy/lambda-action@v0.2.0
         with:
