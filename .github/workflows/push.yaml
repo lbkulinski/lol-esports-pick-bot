@@ -22,7 +22,7 @@ jobs:
       - name: List target files
         run: ls -al target/
       - name: Zip Lambda Package
-        run: zip function.zip target/lol-esports-pick-bot-1.0-SNAPSHOT.jar
+        run: zip function.zip target/*-1.0-SNAPSHOT-all.jar
       - name: Inspect JAR contents
         run: jar tf function.zip
       - name: Deploy Lambda
