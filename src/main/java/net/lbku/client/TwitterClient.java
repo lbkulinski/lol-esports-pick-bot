@@ -62,6 +62,8 @@ public final class TwitterClient {
     }
 
     public TweetStatus postTweet(String text) {
+        Objects.requireNonNull(text);
+
         String token = this.secretService.getSecret("TWITTER_ACCESS_TOKEN");
 
         String tokenSecret = this.secretService.getSecret("TWITTER_ACCESS_SECRET");
