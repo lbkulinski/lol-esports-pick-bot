@@ -23,8 +23,10 @@ jobs:
         run: jar tf target/***-1.0-SNAPSHOT-all.jar
       - name: List target files
         run: ls -al target/
+      - name: Rename JAR
+        run: mv target/***-1.0-SNAPSHOT-all.jar target/function.jar
       - name: Zip Lambda Package
-        run: zip function.zip target/*-1.0-SNAPSHOT-all.jar
+        run: zip function.zip target/function.jar
       - name: Deploy Lambda
         uses: appleboy/lambda-action@v0.2.0
         with:
