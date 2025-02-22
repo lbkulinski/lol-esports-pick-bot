@@ -19,12 +19,12 @@ jobs:
           java-version: '21'
       - name: Install Maven Dependencies
         run: mvn clean package
+      - name: Inspect JAR contents
+        run: jar tf target/***-1.0-SNAPSHOT-all.jar
       - name: List target files
         run: ls -al target/
       - name: Zip Lambda Package
         run: zip function.zip target/*-1.0-SNAPSHOT-all.jar
-      - name: Inspect JAR contents
-        run: jar tf function.zip
       - name: Deploy Lambda
         uses: appleboy/lambda-action@v0.2.0
         with:
@@ -33,3 +33,4 @@ jobs:
           aws_region: ${{ secrets.AWS_REGION }}
           function_name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
           zip_file: function.zip
+          handler: net.lbku.handler.NotificationHandler::handleRequest
