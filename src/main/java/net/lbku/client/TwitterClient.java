@@ -105,6 +105,8 @@ public final class TwitterClient {
             return TweetStatus.SUCCESS;
         }
 
+        TwitterClient.LOGGER.error("Unexpected response code received from Twitter: {}", code);
+
         return TweetStatus.FAILURE;
     }
 }
