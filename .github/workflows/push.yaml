@@ -22,11 +22,9 @@ jobs:
       - name: List target files
         run: ls -al target/
       - name: Inspect JAR contents
-        run: jar tf target/***-1.0-SNAPSHOT-all.jar
-      - name: Rename JAR
-        run: mv target/***-1.0-SNAPSHOT-all.jar target/function.jar
+        run: jar tf target/*-1.0-SNAPSHOT-shaded.jar
       - name: Zip Lambda Package
-        run: zip function.zip target/function.jar
+        run: zip function.zip target/*-1.0-SNAPSHOT-shaded.jar
       - name: Unzip Lambda Package
         run: unzip -l function.zip
       - name: Deploy Lambda
