@@ -6,6 +6,8 @@ import com.google.inject.Inject;
 import net.lbku.model.Champion;
 import net.lbku.model.Game;
 import net.lbku.model.GameResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -18,6 +20,12 @@ import java.util.*;
 
 public final class GameService {
     private final ObjectMapper mapper;
+
+    private static final Logger LOGGER;
+
+    static {
+        LOGGER = LoggerFactory.getLogger(GameService.class);
+    }
 
     @Inject
     public GameService(ObjectMapper mapper) {
@@ -90,7 +98,11 @@ public final class GameService {
         try (HttpClient client = HttpClient.newHttpClient()) {
             response = client.send(request, bodyHandler);
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            String message = e.getMessage();
+
+            GameService.LOGGER.error(message, e);
+
+            return null;
         }
 
         return response.body();
@@ -103,12 +115,20 @@ public final class GameService {
 
         String jsonData = this.getJsonData(uri);
 
+        if (jsonData == null) {
+            return List.of();
+        }
+
         GameResponse gameResponse;
 
         try {
             gameResponse = this.mapper.readValue(jsonData, GameResponse.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            String message = e.getMessage();
+
+            GameService.LOGGER.error(message, e);
+
+            return List.of();
         }
 
         List<Game> games = gameResponse.games();

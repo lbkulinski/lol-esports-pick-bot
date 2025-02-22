@@ -71,6 +71,8 @@ public final class PostService {
             if (status == TwitterClient.TweetStatus.SUCCESS) {
                 this.jedis.sadd(PostService.SET_NAME, id);
 
+                PostService.LOGGER.info("Posted a new game for {} with ID {}",champion, id);
+
                 continue;
             }
 
