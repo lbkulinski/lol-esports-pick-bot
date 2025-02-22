@@ -21,6 +21,8 @@ jobs:
         run: mvn clean package
       - name: Zip Lambda Package
         run: zip function.zip target/lol-esports-pick-bot-1.0-SNAPSHOT.jar
+      - name: Inspect JAR contents
+        run: jar tf function.zip
       - name: Deploy Lambda
         uses: appleboy/lambda-action@v0.2.0
         with:
