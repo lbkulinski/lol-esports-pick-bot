@@ -19,10 +19,10 @@ jobs:
           java-version: '21'
       - name: Install Maven Dependencies
         run: mvn clean package
-      - name: Inspect JAR contents
-        run: jar tf target/***-1.0-SNAPSHOT-all.jar
       - name: List target files
         run: ls -al target/
+      - name: Inspect JAR contents
+        run: jar tf target/***-1.0-SNAPSHOT-all.jar
       - name: Rename JAR
         run: mv target/***-1.0-SNAPSHOT-all.jar target/function.jar
       - name: Zip Lambda Package
