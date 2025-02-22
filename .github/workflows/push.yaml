@@ -19,8 +19,13 @@ jobs:
           java-version: '21'
       - name: Install Maven Dependencies
         run: mvn clean package
-      - name: Zip Lambda Package
-        run: zip function.zip target/*-1.0-SNAPSHOT-shaded.jar
+      - name: Prepare Lambda Package
+        run: |
+          mkdir -p build
+          cp target/*-shaded.jar build/
+          cd build
+          unzip *-shaded.jar
+          zip -r ../function.zip *
       - name: Deploy Lambda
         uses: appleboy/lambda-action@v0.2.0
         with:
@@ -29,4 +34,3 @@ jobs:
           aws_region: ${{ secrets.AWS_REGION }}
           function_name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
           zip_file: function.zip
-          handler: net.lbku.handler.NotificationHandler::handleRequest
