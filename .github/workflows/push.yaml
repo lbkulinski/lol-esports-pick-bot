@@ -19,6 +19,8 @@ jobs:
           java-version: '21'
       - name: Install Maven Dependencies
         run: mvn clean package
+      - name: List target files
+        run: ls -al target/
       - name: Zip Lambda Package
         run: zip function.zip target/lol-esports-pick-bot-1.0-SNAPSHOT.jar
       - name: Inspect JAR contents
