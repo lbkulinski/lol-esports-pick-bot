@@ -1,44 +1,54 @@
 package net.lbku.service;
 
-import com.google.inject.Inject;
-import net.lbku.client.TwitterClient;
+import io.avaje.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import net.lbku.model.Champion;
-import net.lbku.model.Game;
+import net.lbku.dto.Game;
+import net.lbku.model.PostedGame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.UnifiedJedis;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@Singleton
 public final class PostService {
     private final GameService gameService;
 
-    private final UnifiedJedis jedis;
+    private final TwitterService twitterService;
 
-    private final TwitterClient twitterClient;
-
-    private static final String SET_NAME;
+    private final DynamoDbTable<PostedGame> postedGames;
 
     private static final Logger LOGGER;
 
     static {
-        SET_NAME = "seen_vods";
-
         LOGGER = LoggerFactory.getLogger(PostService.class);
     }
 
     @Inject
-    public PostService(GameService gameService, UnifiedJedis jedis, TwitterClient twitterClient) {
+    public PostService(GameService gameService, TwitterService twitterService, DynamoDbEnhancedClient dynamoDbClient) {
         this.gameService = Objects.requireNonNull(gameService);
 
-        this.jedis = Objects.requireNonNull(jedis);
+        this.twitterService = Objects.requireNonNull(twitterService);
 
-        this.twitterClient = Objects.requireNonNull(twitterClient);
+        Objects.requireNonNull(dynamoDbClient);
+
+        String postedGamesTableName = Config.get("app.dynamodb.tables.posted-games");
+
+        TableSchema<PostedGame> postedGamesSchema = TableSchema.fromImmutableClass(PostedGame.class);
+
+        this.postedGames = dynamoDbClient.table(postedGamesTableName, postedGamesSchema);
     }
 
-    private TwitterClient.TweetStatus tweetGame(Champion champion, Game game) {
+    private TwitterService.TweetStatus tweetGame(Champion champion, Game game) {
         Objects.requireNonNull(champion);
 
         Objects.requireNonNull(game);
@@ -51,7 +61,7 @@ public final class PostService {
 
         String text = "%s played %s at %s! %s".formatted(player, champion, tournament, vod);
 
-        return this.twitterClient.postTweet(text);
+        return this.twitterService.postTweet(text);
     }
 
     private void postChampionGames(Champion champion) {
@@ -62,21 +72,36 @@ public final class PostService {
         for (Game game : games) {
             String id = game.id();
 
-            if (this.jedis.sismember(PostService.SET_NAME, id)) {
+            Key key = Key.builder()
+                         .partitionValue(id)
+                         .build();
+
+            PostedGame postedGame = this.postedGames.getItem(key);
+
+            if (postedGame != null) {
                 continue;
             }
 
-            TwitterClient.TweetStatus status = this.tweetGame(champion, game);
+            TwitterService.TweetStatus status = this.tweetGame(champion, game);
 
-            if (status == TwitterClient.TweetStatus.SUCCESS) {
-                this.jedis.sadd(PostService.SET_NAME, id);
-
-                PostService.LOGGER.info("Posted a new game for {} with ID {}",champion, id);
+            if (status == TwitterService.TweetStatus.FAILURE) {
+                LOGGER.error("Failed to post game with ID {}", id);
 
                 continue;
             }
 
-            PostService.LOGGER.error("Failed to post game with ID {}", id);
+            long ttl = Instant.now()
+                              .plus(30L, ChronoUnit.DAYS)
+                              .getEpochSecond();
+
+            PostedGame newGame = PostedGame.builder()
+                                           .id(id)
+                                           .ttl(ttl)
+                                           .build();
+
+            this.postedGames.putItem(newGame);
+
+            LOGGER.info("Posted a new game for {} with ID {}", champion, id);
         }
     }
 

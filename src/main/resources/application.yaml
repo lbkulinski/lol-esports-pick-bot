@@ -1,0 +1,6 @@
+app:
+  secrets-manager:
+    id: ${APP_SECRETS_MANAGER_ID}
+  dynamodb:
+    tables:
+      posted-games: ${APP_DYNAMODB_TABLES_POSTED_GAMES}
