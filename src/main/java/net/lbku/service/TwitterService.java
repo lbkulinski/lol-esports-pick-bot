@@ -9,6 +9,7 @@ import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import net.lbku.dto.Secret;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,13 +67,12 @@ public final class TwitterService {
     }
 
     public TweetStatus postTweet(String text) {
-        String token = this.secretService.getSecret()
-                                         .twitter()
-                                         .accessToken();
+        Secret.TwitterSecret secret = this.secretService.getSecret()
+                                                        .twitter();
 
-        String tokenSecret = this.secretService.getSecret()
-                                               .twitter()
-                                               .accessSecret();
+        String token = secret.accessToken();
+
+        String tokenSecret = secret.accessSecret();
 
         OAuth1AccessToken accessToken = new OAuth1AccessToken(token, tokenSecret);
 
@@ -85,13 +85,9 @@ public final class TwitterService {
             "text": "%s"
         }""".formatted(text));
 
-        String consumerKey = this.secretService.getSecret()
-                                               .twitter()
-                                               .consumerKey();
+        String consumerKey = secret.consumerKey();
 
-        String consumerSecret = this.secretService.getSecret()
-                                                  .twitter()
-                                                  .consumerSecret();
+        String consumerSecret = secret.consumerSecret();
 
         Response response;
 
