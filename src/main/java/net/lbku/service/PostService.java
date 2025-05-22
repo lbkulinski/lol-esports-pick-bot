@@ -80,12 +80,8 @@ public final class PostService {
             PostedGame postedGame = this.postedGames.getItem(key);
 
             if (postedGame != null) {
-                LOGGER.info("Game with ID {} was already posted.", id);
-
                 continue;
             }
-
-            LOGGER.info("Posting champion game: {}", id);
 
             TwitterService.TweetStatus status = this.tweetGame(champion, game);
 
