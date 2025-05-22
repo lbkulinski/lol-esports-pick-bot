@@ -1,5 +1,4 @@
-package net.lbku.client;
-
+package net.lbku.service;
 
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi10a;
@@ -8,8 +7,8 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
-import com.google.inject.Inject;
-import net.lbku.service.SecretService;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,17 +16,22 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-public final class TwitterClient {
+@Singleton
+public final class TwitterService {
     private final SecretService secretService;
+
+    private static final String TWITTER_API_URL;
 
     private static final Logger LOGGER;
 
     static {
-        LOGGER = LoggerFactory.getLogger(TwitterClient.class);
+        TWITTER_API_URL = "https://api.twitter.com/2/tweets";
+
+        LOGGER = LoggerFactory.getLogger(TwitterService.class);
     }
 
     @Inject
-    public TwitterClient(SecretService secretService) {
+    public TwitterService(SecretService secretService) {
         this.secretService = Objects.requireNonNull(secretService);
     }
 
@@ -62,15 +66,17 @@ public final class TwitterClient {
     }
 
     public TweetStatus postTweet(String text) {
-        String token = this.secretService.getSecret("TWITTER_ACCESS_TOKEN");
+        String token = this.secretService.getSecret()
+                                         .twitter()
+                                         .accessToken();
 
-        String tokenSecret = this.secretService.getSecret("TWITTER_ACCESS_SECRET");
+        String tokenSecret = this.secretService.getSecret()
+                                               .twitter()
+                                               .accessSecret();
 
         OAuth1AccessToken accessToken = new OAuth1AccessToken(token, tokenSecret);
 
-        String url = "https://api.twitter.com/2/tweets";
-
-        OAuthRequest request = new OAuthRequest(Verb.POST, url);
+        OAuthRequest request = new OAuthRequest(Verb.POST, TWITTER_API_URL);
 
         request.addHeader("Content-Type", "application/json");
 
@@ -79,9 +85,13 @@ public final class TwitterClient {
             "text": "%s"
         }""".formatted(text));
 
-        String consumerKey = this.secretService.getSecret("TWITTER_CONSUMER_KEY");
+        String consumerKey = this.secretService.getSecret()
+                                               .twitter()
+                                               .consumerKey();
 
-        String consumerSecret = this.secretService.getSecret("TWITTER_CONSUMER_SECRET");
+        String consumerSecret = this.secretService.getSecret()
+                                                  .twitter()
+                                                  .consumerSecret();
 
         Response response;
 
@@ -92,7 +102,7 @@ public final class TwitterClient {
         } catch (IOException | ExecutionException | InterruptedException e) {
             String message = e.getMessage();
 
-            TwitterClient.LOGGER.error(message, e);
+            LOGGER.error(message, e);
 
             return TweetStatus.FAILURE;
         }
@@ -105,7 +115,7 @@ public final class TwitterClient {
             return TweetStatus.SUCCESS;
         }
 
-        TwitterClient.LOGGER.error("Unexpected response code received from Twitter: {}", code);
+        LOGGER.error("Unexpected response code received from Twitter: {}", code);
 
         return TweetStatus.FAILURE;
     }

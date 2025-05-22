@@ -1,11 +1,12 @@
 package net.lbku.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
+import io.avaje.jsonb.Jsonb;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import net.lbku.dto.GameWrapper;
 import net.lbku.model.Champion;
-import net.lbku.model.Game;
-import net.lbku.model.GameResponse;
+import net.lbku.dto.Game;
+import net.lbku.dto.GameResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +19,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+@Singleton
 public final class GameService {
-    private final ObjectMapper mapper;
+    private final Jsonb jsonb;
 
     private static final Logger LOGGER;
 
@@ -28,8 +30,8 @@ public final class GameService {
     }
 
     @Inject
-    public GameService(ObjectMapper mapper) {
-        this.mapper = Objects.requireNonNull(mapper);
+    public GameService(Jsonb jsonb) {
+        this.jsonb = Objects.requireNonNull(jsonb);
     }
 
     private URI buildUri(Champion champion) {
@@ -100,7 +102,7 @@ public final class GameService {
         } catch (IOException | InterruptedException e) {
             String message = e.getMessage();
 
-            GameService.LOGGER.error(message, e);
+            LOGGER.error(message, e);
 
             return null;
         }
@@ -119,19 +121,12 @@ public final class GameService {
             return List.of();
         }
 
-        GameResponse gameResponse;
-
-        try {
-            gameResponse = this.mapper.readValue(jsonData, GameResponse.class);
-        } catch (JsonProcessingException e) {
-            String message = e.getMessage();
-
-            GameService.LOGGER.error(message, e);
-
-            return List.of();
-        }
-
-        List<Game> games = gameResponse.games();
+        List<Game> games = this.jsonb.type(GameResponse.class)
+                                     .fromJson(jsonData)
+                                     .gameWrappers()
+                                     .stream()
+                                     .map(GameWrapper::game)
+                                     .toList();
 
         return List.copyOf(games);
     }

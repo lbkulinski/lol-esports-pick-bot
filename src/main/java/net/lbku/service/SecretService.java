@@ -1,53 +1,43 @@
 package net.lbku.service;
 
-import com.amazonaws.secretsmanager.caching.SecretCache;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
+import io.avaje.config.Config;
+import io.avaje.jsonb.Jsonb;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import lombok.Getter;
+import net.lbku.dto.Secret;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
-import java.util.Map;
 import java.util.Objects;
 
+@Getter
+@Singleton
 public final class SecretService {
-    private final SecretCache secretCache;
-
-    private final ObjectMapper mapper;
+    private final Secret secret;
 
     @Inject
-    public SecretService(SecretCache secretCache, ObjectMapper mapper) {
-        this.secretCache = Objects.requireNonNull(secretCache);
+    public SecretService(SecretsManagerClient secretsManagerClient, Jsonb jsonb) {
+        Objects.requireNonNull(secretsManagerClient);
 
-        this.mapper = Objects.requireNonNull(mapper);
+        Objects.requireNonNull(jsonb);
+
+        this.secret = readSecrets(secretsManagerClient, jsonb);
     }
 
-    public String getSecret(String id) {
-        Objects.requireNonNull(id);
+    private static Secret readSecrets(SecretsManagerClient secretsManagerClient, Jsonb jsonb) {
+        String secretId = Config.get("app.secrets-manager.id");
 
-        String secretId = System.getenv("SECRET_ID");
+        GetSecretValueRequest request = GetSecretValueRequest.builder()
+                                                             .secretId(secretId)
+                                                             .build();
 
-        if (secretId == null) {
-            throw new IllegalStateException("SECRET_ID is not set");
-        }
+        GetSecretValueResponse response = secretsManagerClient.getSecretValue(request);
 
-        String secret = this.secretCache.getSecretString(secretId);
+        String secretString = response.secretString();
 
-        TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
-
-        Map<String, String> secretMap;
-
-        try {
-            secretMap = this.mapper.readValue(secret, typeReference);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        String value = secretMap.get(id);
-
-        if (value == null) {
-            throw new IllegalStateException("Secret ID %s not found".formatted(id));
-        }
-
-        return value;
+        return jsonb.type(Secret.class)
+                    .fromJson(secretString);
     }
 }
