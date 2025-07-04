@@ -2,7 +2,10 @@ name: lol-esports-pick-bot CI/CD
 on:
   push:
     branches:
-      - main  # Change this if needed
+      - main
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
 permissions:
   id-token: write
   contents: read
