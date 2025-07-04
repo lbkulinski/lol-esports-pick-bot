@@ -2,8 +2,8 @@ package net.lbku.model;
 
 public enum Champion {
     DRAVEN,
-    JHIN,
-    LUCIAN;
+    /*JHIN,
+    LUCIAN*/;
 
     @Override
     public String toString() {
