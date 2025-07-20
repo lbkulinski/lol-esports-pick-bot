@@ -14,6 +14,4 @@ public class PostedGame {
     @NonNull
     @Getter(onMethod_ = @DynamoDbPartitionKey)
     String id;
-
-    long ttl;
 }

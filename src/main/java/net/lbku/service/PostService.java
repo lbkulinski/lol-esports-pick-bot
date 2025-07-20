@@ -90,13 +90,8 @@ public final class PostService {
                 continue;
             }
 
-            long ttl = Instant.now()
-                              .plus(30L, ChronoUnit.DAYS)
-                              .getEpochSecond();
-
             PostedGame newGame = PostedGame.builder()
                                            .id(id)
-                                           .ttl(ttl)
                                            .build();
 
             this.postedGames.putItem(newGame);
