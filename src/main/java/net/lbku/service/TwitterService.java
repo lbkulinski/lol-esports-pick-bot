@@ -7,38 +7,73 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import net.lbku.dto.Secret;
+import net.lbku.exception.TwitterServiceException;
+import org.apache.hc.core5.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-@Singleton
+@Service
 public final class TwitterService {
+    private static final Logger log = LoggerFactory.getLogger(TwitterService.class);
+
+    private static final String TWITTER_AUTHORIZATION_BASE_URL = "https://api.twitter.com/oauth/authorize";
+    private static final String TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
+    private static final String TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
+    private static final String TWITTER_API_URL = "https://api.twitter.com/2/tweets";
+    private static final String CREATE_TWEET_REQUEST_TEMPLATE = """
+    { "text": "%s" }""";
+
     private final SecretService secretService;
 
-    private static final String TWITTER_API_URL;
-
-    private static final Logger LOGGER;
-
-    static {
-        TWITTER_API_URL = "https://api.twitter.com/2/tweets";
-
-        LOGGER = LoggerFactory.getLogger(TwitterService.class);
+    @Autowired
+    public TwitterService(SecretService secretService) {
+        this.secretService = secretService;
     }
 
-    @Inject
-    public TwitterService(SecretService secretService) {
-        this.secretService = Objects.requireNonNull(secretService);
+    public void postTweet(String text) {
+        Secret.TwitterSecret secret = this.secretService.getSecret()
+                                                        .twitter();
+
+        OAuth1AccessToken accessToken = new OAuth1AccessToken(secret.accessToken(), secret.accessSecret());
+
+        OAuthRequest request = new OAuthRequest(Verb.POST, TWITTER_API_URL);
+
+        request.addHeader("Content-Type", "application/json");
+
+        String payload = String.format(CREATE_TWEET_REQUEST_TEMPLATE, text);
+
+        request.setPayload(payload);
+
+        Response response;
+
+        try (OAuth10aService service = this.getService(secret.consumerKey(), secret.consumerSecret())) {
+            service.signRequest(accessToken, request);
+
+            response = service.execute(request);
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            throw new TwitterServiceException("Failed to post tweet to Twitter", e);
+        }
+
+        int code = response.getCode();
+
+        if (code == HttpStatus.SC_CREATED) {
+            return;
+        }
+
+        String message = String.format("Failed to post tweet to Twitter, response code: %d", code);
+
+        throw new TwitterServiceException(message);
     }
 
     private OAuth10aService getService(String consumerKey, String consumerSecret) {
         Objects.requireNonNull(consumerKey);
-
         Objects.requireNonNull(consumerSecret);
 
         return new ServiceBuilder(consumerKey)
@@ -46,73 +81,18 @@ public final class TwitterService {
             .build(new DefaultApi10a() {
                 @Override
                 protected String getAuthorizationBaseUrl() {
-                    return "https://api.twitter.com/oauth/authorize";
+                    return TWITTER_AUTHORIZATION_BASE_URL;
                 }
 
                 @Override
                 public String getRequestTokenEndpoint() {
-                    return "https://api.twitter.com/oauth/request_token";
+                    return TWITTER_REQUEST_TOKEN_URL;
                 }
 
                 @Override
                 public String getAccessTokenEndpoint() {
-                    return "https://api.twitter.com/oauth/access_token";
+                    return TWITTER_ACCESS_TOKEN_URL;
                 }
             });
-    }
-
-    public enum TweetStatus {
-        SUCCESS,
-        FAILURE,
-    }
-
-    public TweetStatus postTweet(String text) {
-        Secret.TwitterSecret secret = this.secretService.getSecret()
-                                                        .twitter();
-
-        String token = secret.accessToken();
-
-        String tokenSecret = secret.accessSecret();
-
-        OAuth1AccessToken accessToken = new OAuth1AccessToken(token, tokenSecret);
-
-        OAuthRequest request = new OAuthRequest(Verb.POST, TWITTER_API_URL);
-
-        request.addHeader("Content-Type", "application/json");
-
-        request.setPayload("""
-        {
-            "text": "%s"
-        }""".formatted(text));
-
-        String consumerKey = secret.consumerKey();
-
-        String consumerSecret = secret.consumerSecret();
-
-        Response response;
-
-        try (OAuth10aService service = this.getService(consumerKey, consumerSecret)) {
-            service.signRequest(accessToken, request);
-
-            response = service.execute(request);
-        } catch (IOException | ExecutionException | InterruptedException e) {
-            String message = e.getMessage();
-
-            LOGGER.error(message, e);
-
-            return TweetStatus.FAILURE;
-        }
-
-        int code = response.getCode();
-
-        int expectedCode = 201;
-
-        if (code == expectedCode) {
-            return TweetStatus.SUCCESS;
-        }
-
-        LOGGER.error("Unexpected response code received from Twitter: {}", code);
-
-        return TweetStatus.FAILURE;
     }
 }

@@ -1,109 +1,81 @@
 package net.lbku.service;
 
-import io.avaje.config.Config;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import net.lbku.model.Champion;
+import net.lbku.model.ChampionConfiguration;
 import net.lbku.dto.Game;
 import net.lbku.model.PostedGame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-@Singleton
+@Service
 public final class PostService {
-    private final GameService gameService;
+    private static final Logger log = LoggerFactory.getLogger(PostService.class);
 
+    private static final String TWEET_TEMPLATE = "%s played %s at %s! %s";
+
+    private final ChampionConfigurationService configurationService;
+    private final GameService gameService;
+    private final PostedGameService postedGameService;
     private final TwitterService twitterService;
 
-    private final DynamoDbTable<PostedGame> postedGames;
-
-    private static final Logger LOGGER;
-
-    static {
-        LOGGER = LoggerFactory.getLogger(PostService.class);
+    @Autowired
+    public PostService(
+        ChampionConfigurationService configurationService,
+        GameService gameService,
+        PostedGameService postedGameService,
+        TwitterService twitterService
+    ) {
+        this.configurationService = configurationService;
+        this.gameService = gameService;
+        this.postedGameService = postedGameService;
+        this.twitterService = twitterService;
     }
 
-    @Inject
-    public PostService(GameService gameService, TwitterService twitterService, DynamoDbEnhancedClient dynamoDbClient) {
-        this.gameService = Objects.requireNonNull(gameService);
-
-        this.twitterService = Objects.requireNonNull(twitterService);
-
-        Objects.requireNonNull(dynamoDbClient);
-
-        String postedGamesTableName = Config.get("app.dynamodb.tables.posted-games");
-
-        TableSchema<PostedGame> postedGamesSchema = TableSchema.fromImmutableClass(PostedGame.class);
-
-        this.postedGames = dynamoDbClient.table(postedGamesTableName, postedGamesSchema);
+    public void postNewGames() {
+        this.configurationService.getConfigurations()
+                                 .forEach(this::postChampionGames);
     }
 
-    private TwitterService.TweetStatus tweetGame(Champion champion, Game game) {
-        Objects.requireNonNull(champion);
+    private void postChampionGames(ChampionConfiguration configuration) {
+        Objects.requireNonNull(configuration);
 
-        Objects.requireNonNull(game);
-
-        String player = game.player();
-
-        String tournament = game.tournament();
-
-        String vod = game.vod();
-
-        String text = "%s played %s at %s! %s".formatted(player, champion, tournament, vod);
-
-        return this.twitterService.postTweet(text);
-    }
-
-    private void postChampionGames(Champion champion) {
-        Objects.requireNonNull(champion);
-
-        List<Game> games = this.gameService.getGames(champion);
+        List<Game> games = this.gameService.getGames(configuration);
 
         for (Game game : games) {
             String id = game.id();
 
-            Key key = Key.builder()
-                         .partitionValue(id)
-                         .build();
-
-            PostedGame postedGame = this.postedGames.getItem(key);
+            PostedGame postedGame = this.postedGameService.getPostedGame(id);
 
             if (postedGame != null) {
                 continue;
             }
 
-            TwitterService.TweetStatus status = this.tweetGame(champion, game);
-
-            if (status == TwitterService.TweetStatus.FAILURE) {
-                LOGGER.error("Failed to post game with ID {}", id);
-
-                continue;
-            }
+            this.tweetGame(configuration, game);
 
             PostedGame newGame = PostedGame.builder()
                                            .id(id)
                                            .build();
 
-            this.postedGames.putItem(newGame);
+            this.postedGameService.createPostedGame(newGame);
 
-            LOGGER.info("Posted a new game for {} with ID {}", champion, id);
+            String championName = configuration.getDisplayName();
+
+            log.info("Posted a new game for {} with ID {}", championName, id);
         }
     }
 
-    public void postNewGames() {
-        Champion[] champions = Champion.values();
+    private void tweetGame(ChampionConfiguration configuration, Game game) {
+        Objects.requireNonNull(configuration);
+        Objects.requireNonNull(game);
 
-        Arrays.stream(champions)
-              .forEach(this::postChampionGames);
+        String championName = configuration.getDisplayName();
+
+        String text = String.format(TWEET_TEMPLATE, game.player(), championName, game.tournament(), game.vod());
+
+        this.twitterService.postTweet(text);
     }
 }

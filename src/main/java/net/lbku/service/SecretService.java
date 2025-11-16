@@ -1,34 +1,37 @@
 package net.lbku.service;
 
-import io.avaje.config.Config;
-import io.avaje.jsonb.Jsonb;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import net.lbku.dto.Secret;
+import net.lbku.exception.SecretServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
-import java.util.Objects;
-
-@Getter
-@Singleton
+@Service
 public final class SecretService {
+    @Getter
     private final Secret secret;
 
-    @Inject
-    public SecretService(SecretsManagerClient secretsManagerClient, Jsonb jsonb) {
-        Objects.requireNonNull(secretsManagerClient);
-
-        Objects.requireNonNull(jsonb);
-
-        this.secret = readSecrets(secretsManagerClient, jsonb);
+    @Autowired
+    public SecretService(
+        SecretsManagerClient secretsManagerClient,
+        ObjectMapper objectMapper,
+        @Value("${app.aws.secrets-manager.id}") String secretId
+    ) {
+        this.secret = readSecrets(secretId, secretsManagerClient, objectMapper);
     }
 
-    private static Secret readSecrets(SecretsManagerClient secretsManagerClient, Jsonb jsonb) {
-        String secretId = Config.get("app.secrets-manager.id");
-
+    private static Secret readSecrets(
+        String secretId,
+        SecretsManagerClient secretsManagerClient,
+        ObjectMapper objectMapper
+    ) {
         GetSecretValueRequest request = GetSecretValueRequest.builder()
                                                              .secretId(secretId)
                                                              .build();
@@ -37,7 +40,14 @@ public final class SecretService {
 
         String secretString = response.secretString();
 
-        return jsonb.type(Secret.class)
-                    .fromJson(secretString);
+        Secret secret;
+
+        try {
+            secret = objectMapper.readValue(secretString, Secret.class);
+        } catch (JsonProcessingException e) {
+            throw new SecretServiceException("Failed to parse secrets from AWS Secrets Manager");
+        }
+
+        return secret;
     }
 }

@@ -1,6 +1,11 @@
 app:
-  secrets-manager:
-    id: ${APP_SECRETS_MANAGER_ID}
-  dynamodb:
-    tables:
-      posted-games: ${APP_DYNAMODB_TABLES_POSTED_GAMES}
+  rollbar:
+    environment: ${APP_ROLLBAR_ENVIRONMENT}
+    code-version: ${GITHUB_SHA}
+  aws:
+    secrets-manager:
+      id: ${APP_AWS_SECRETS_MANAGER_ID}
+    dynamodb:
+      tables:
+        champion-configurations: ${APP_AWS_DYNAMODB_TABLES_CHAMPION_CONFIGURATIONS}
+        posted-games: ${APP_AWS_DYNAMODB_TABLES_POSTED_GAMES}
