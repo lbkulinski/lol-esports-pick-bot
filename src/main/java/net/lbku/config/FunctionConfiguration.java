@@ -23,6 +23,7 @@ public class FunctionConfiguration {
     @Bean
     public Supplier<String> gamePoster() {
         return () -> {
+            postService.postNewGames();
             return "OK";
         };
     }
