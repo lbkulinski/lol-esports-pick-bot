@@ -9,12 +9,8 @@ import java.io.IOException;
 public final class BooleanDeserializer extends StdDeserializer<Boolean> {
     private static final String TRUE_MAPPING = "Yes";
 
-    public BooleanDeserializer(Class<?> vc) {
-        super(vc);
-    }
-
     public BooleanDeserializer() {
-        this(null);
+        super(Boolean.class);
     }
 
     @Override
