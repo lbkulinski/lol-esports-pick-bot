@@ -1,14 +1,14 @@
-package net.lbku.factory;
+package net.lbku.config;
 
-import io.avaje.inject.Bean;
-import io.avaje.inject.Factory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
-@Factory
-public final class SecretsManagerClientFactory {
+@Configuration
+public class SecretsManagerClientFactory {
     @Bean
-    public SecretsManagerClient buildClient() {
+    public SecretsManagerClient secretsManagerClient() {
         return SecretsManagerClient.builder()
                                    .region(Region.US_EAST_2)
                                    .build();

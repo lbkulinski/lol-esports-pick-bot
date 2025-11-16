@@ -1,11 +1,15 @@
 package net.lbku.dto;
 
-import io.avaje.jsonb.Json;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Json
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record Secret(
+    RollbarSecret rollbar,
     TwitterSecret twitter
 ) {
+    public record RollbarSecret(String accessToken) {
+    }
+
     public record TwitterSecret(
         String consumerKey,
 
@@ -14,5 +18,6 @@ public record Secret(
         String accessToken,
 
         String accessSecret
-    ) {}
+    ) {
+    }
 }

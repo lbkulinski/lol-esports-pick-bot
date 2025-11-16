@@ -1,30 +1,30 @@
 package net.lbku.dto;
-
-import io.avaje.jsonb.Json;
-import net.lbku.dto.serializer.BooleanSerializer;
-import net.lbku.dto.serializer.InstantSerializer;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import net.lbku.dto.serialization.BooleanDeserializer;
 
 import java.time.Instant;
 
-@Json
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record Game(
-    @Json.Property("GameId")
+    @JsonAlias("GameId")
     String id,
 
-    @Json.Property("Link")
+    @JsonAlias("Link")
     String player,
 
-    @Json.Property("Tournament")
+    @JsonAlias("Tournament")
     String tournament,
 
-    @Json.Property("DateTime UTC")
-    @Json.Serializer(InstantSerializer.class)
+    @JsonAlias("DateTime UTC")
     Instant timestamp,
 
-    @Json.Property("PlayerWin")
-    @Json.Serializer(BooleanSerializer.class)
+    @JsonAlias("PlayerWin")
+    @JsonDeserialize(using = BooleanDeserializer.class)
     boolean won,
 
-    @Json.Property("VOD")
+    @JsonAlias("VOD")
     String vod
-) {}
+) {
+}

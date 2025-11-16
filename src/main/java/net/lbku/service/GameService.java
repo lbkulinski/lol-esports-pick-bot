@@ -1,133 +1,149 @@
 package net.lbku.service;
 
-import io.avaje.jsonb.Jsonb;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.lbku.dto.GameWrapper;
-import net.lbku.model.Champion;
+import net.lbku.exception.GameServiceException;
+import net.lbku.model.ChampionConfiguration;
 import net.lbku.dto.Game;
 import net.lbku.dto.GameResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.apache.hc.core5.net.URIBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
+import java.net.URISyntaxException;
 import java.util.*;
 
-@Singleton
+@Service
 public final class GameService {
-    private final Jsonb jsonb;
+    private static final String SCHEMA = "https";
+    private static final String HOST = "lol.fandom.com";
+    private static final String PATH = "/api.php";
+    private static final Set<String> GAME_QUERY_TABLES = Set.of(
+        "ScoreboardPlayers",
+        "ScoreboardGames"
+    );
+    private static final String GAME_QUERY_WHERE_TEMPLATE = """
+    ScoreboardPlayers.Champion = '%s' \
+    AND ScoreboardGames.VOD IS NOT NULL AND ScoreboardGames.VOD != ''""";
+    private static final Set<String> GAME_QUERY_FIELDS = Set.of(
+        "ScoreboardPlayers.GameId",
+        "ScoreboardPlayers.Link",
+        "ScoreboardGames.Tournament",
+        "ScoreboardPlayers.DateTime_UTC",
+        "ScoreboardPlayers.PlayerWin",
+        "ScoreboardGames.VOD"
+    );
 
-    private static final Logger LOGGER;
+    private final CloseableHttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-    static {
-        LOGGER = LoggerFactory.getLogger(GameService.class);
+    @Autowired
+    public GameService(
+        CloseableHttpClient httpClient,
+        ObjectMapper objectMapper
+    ) {
+        this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
     }
 
-    @Inject
-    public GameService(Jsonb jsonb) {
-        this.jsonb = Objects.requireNonNull(jsonb);
-    }
+    public List<Game> getGames(ChampionConfiguration config) {
+        Objects.requireNonNull(config);
 
-    private URI buildUri(Champion champion) {
-        Objects.requireNonNull(champion);
+        URI uri = this.buildUri(config);
 
-        Set<String> tables = Set.of(
-            "ScoreboardPlayers",
-            "ScoreboardGames"
-        );
+        HttpGet httpGet = new HttpGet(uri);
 
-        String where = """
-        ScoreboardPlayers.Champion = '%s' \
-        AND ScoreboardGames.VOD IS NOT NULL AND ScoreboardGames.VOD != ''""".formatted(champion);
+        GameResponse gameResponse;
 
-        Set<String> fields = Set.of(
-            "ScoreboardPlayers.GameId",
-            "ScoreboardPlayers.Link",
-            "ScoreboardGames.Tournament",
-            "ScoreboardPlayers.DateTime_UTC",
-            "ScoreboardPlayers.PlayerWin",
-            "ScoreboardGames.VOD"
-        );
+        try {
+            gameResponse = this.httpClient.execute(httpGet, this::handleResponse);
+        } catch (IOException e) {
+            String championName = config.getDisplayName();
 
-        Map<String, String> queryParameters = Map.of(
-            "maxlag", "5",
-            "tables", String.join(",", tables),
-            "limit", "50",
-            "format", "json",
-            "order_by", "ScoreboardPlayers.DateTime_UTC DESC",
-            "action", "cargoquery",
-            "where", where,
-            "fields", String.join(",",  fields),
-            "join_on", "ScoreboardPlayers.GameId=ScoreboardGames.GameId"
-        );
+            String message = String.format("Failed to fetch game data for champion: %s", championName);
 
-        String query = queryParameters.entrySet()
-                                      .stream()
-                                      .map(entry -> {
-                                          String key = entry.getKey();
-
-                                          String value = entry.getValue();
-
-                                          String encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
-
-                                          return "%s=%s".formatted(key, encodedValue);
-                                      })
-                                      .reduce("%s&%s"::formatted)
-                                      .get();
-
-        String uriString = "https://lol.fandom.com/api.php?%s".formatted(query);
-
-        return URI.create(uriString);
-    }
-
-    private String getJsonData(URI uri) {
-        Objects.requireNonNull(uri);
-
-        HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .GET()
-                                         .build();
-
-        HttpResponse<String> response;
-
-        HttpResponse.BodyHandler<String> bodyHandler = HttpResponse.BodyHandlers.ofString();
-
-        try (HttpClient client = HttpClient.newHttpClient()) {
-            response = client.send(request, bodyHandler);
-        } catch (IOException | InterruptedException e) {
-            String message = e.getMessage();
-
-            LOGGER.error(message, e);
-
-            return null;
+            throw new GameServiceException(message, e);
         }
 
-        return response.body();
+        return gameResponse.gameWrappers()
+                           .stream()
+                           .map(GameWrapper::game)
+                           .toList();
     }
 
-    public List<Game> getGames(Champion champion) {
-        Objects.requireNonNull(champion);
+    private URI buildUri(ChampionConfiguration config) {
+        String championName = config.getDisplayName();
 
-        URI uri = this.buildUri(champion);
+        String whereClause = String.format(GAME_QUERY_WHERE_TEMPLATE, championName);
 
-        String jsonData = this.getJsonData(uri);
+        List<NameValuePair> params = List.of(
+            new BasicNameValuePair("maxlag","5"),
+            new BasicNameValuePair("tables", String.join(",", GAME_QUERY_TABLES)),
+            new BasicNameValuePair("limit", "50"),
+            new BasicNameValuePair("format", "json"),
+            new BasicNameValuePair("order_by", "ScoreboardPlayers.DateTime_UTC DESC"),
+            new BasicNameValuePair("action", "cargoquery"),
+            new BasicNameValuePair("where", whereClause),
+            new BasicNameValuePair("fields", String.join(",",  GAME_QUERY_FIELDS)),
+            new BasicNameValuePair("join_on", "ScoreboardPlayers.GameId=ScoreboardGames.GameId")
+        );
 
-        if (jsonData == null) {
-            return List.of();
+        URI uri;
+
+        try {
+            uri = new URIBuilder()
+                .setScheme(SCHEMA)
+                .setHost(HOST)
+                .setPath(PATH)
+                .addParameters(params)
+                .build();
+        } catch (URISyntaxException e) {
+            String message = String.format("Failed to build URI for champion: %s", championName);
+
+            throw new GameServiceException(message, e);
         }
 
-        List<Game> games = this.jsonb.type(GameResponse.class)
-                                     .fromJson(jsonData)
-                                     .gameWrappers()
-                                     .stream()
-                                     .map(GameWrapper::game)
-                                     .toList();
+        return uri;
+    }
 
-        return List.copyOf(games);
+    private GameResponse handleResponse(ClassicHttpResponse httpResponse) {
+        int statusCode = httpResponse.getCode();
+
+        if (statusCode != HttpStatus.SC_OK) {
+            String message = String.format("Received non-OK response: %d", statusCode);
+
+            throw new GameServiceException(message);
+        }
+
+        HttpEntity httpEntity = httpResponse.getEntity();
+
+        String stringEntity;
+
+        try {
+            stringEntity = EntityUtils.toString(httpEntity);
+        } catch (IOException | ParseException e) {
+            String message = "Failed to read game data";
+
+            throw new GameServiceException(message, e);
+        }
+
+        GameResponse gameResponse;
+
+        try {
+            gameResponse = this.objectMapper.readValue(stringEntity, GameResponse.class);
+        } catch (IOException e) {
+            String message = "Failed to deserialize game data";
+
+            throw new GameServiceException(message, e);
+        }
+
+        return gameResponse;
     }
 }

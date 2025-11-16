@@ -1,7 +1,8 @@
 package net.lbku.dto;
 
-import io.avaje.jsonb.Json;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Json
-public record GameWrapper(@Json.Property("title") Game game) {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record GameWrapper(@JsonAlias("title") Game game) {
 }

@@ -1,12 +1,10 @@
 package net.lbku.dto;
 
-import io.avaje.jsonb.Json;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
-@Json
-public record GameResponse(
-    @Json.Property("cargoquery")
-    List<GameWrapper> gameWrappers
-) {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record GameResponse(@JsonAlias("cargoquery") List<GameWrapper> gameWrappers) {
 }
