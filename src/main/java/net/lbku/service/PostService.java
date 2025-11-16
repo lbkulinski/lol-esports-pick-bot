@@ -43,6 +43,10 @@ public final class PostService {
     private void postChampionGames(ChampionConfiguration configuration) {
         Objects.requireNonNull(configuration);
 
+        if (!configuration.isEnabled()) {
+            return;
+        }
+
         List<Game> games = this.gameService.getGames(configuration);
 
         for (Game game : games) {

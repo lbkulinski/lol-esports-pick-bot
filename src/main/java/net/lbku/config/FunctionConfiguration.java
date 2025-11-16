@@ -12,8 +12,6 @@ import java.util.function.Supplier;
 
 @Configuration
 public class FunctionConfiguration {
-    private static final Logger log = LoggerFactory.getLogger(FunctionConfiguration.class);
-
     private final PostService postService;
     private final Rollbar rollbar;
 
@@ -34,11 +32,9 @@ public class FunctionConfiguration {
             } catch (Exception e) {
                 String message = "An error occurred while posting new games";
 
-                log.error(message, e);
-
                 this.rollbar.error(e, message);
 
-                return "ERROR";
+                throw e;
             }
 
             return "OK";
