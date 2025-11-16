@@ -72,6 +72,12 @@ public final class GameService {
             throw new GameServiceException(message, e);
         }
 
+        List<GameWrapper> wrappers = gameResponse.gameWrappers();
+
+        if ((wrappers == null) || wrappers.isEmpty()) {
+            return List.of();
+        }
+
         return gameResponse.gameWrappers()
                            .stream()
                            .map(GameWrapper::game)
