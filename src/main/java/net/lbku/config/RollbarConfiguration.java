@@ -5,16 +5,25 @@ import com.rollbar.notifier.config.Config;
 import com.rollbar.notifier.config.ConfigBuilder;
 import net.lbku.service.SecretService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RollbarConfiguration {
     private final SecretService secretService;
+    private final String environment;
+    private final String codeVersion;
 
     @Autowired
-    public RollbarConfiguration(SecretService secretService) {
+    public RollbarConfiguration(
+        SecretService secretService,
+        @Value("${app.rollbar.environment}" ) String environment,
+        @Value("${app.rollbar.code-version}" ) String codeVersion
+    ) {
         this.secretService = secretService;
+        this.environment = environment;
+        this.codeVersion = codeVersion;
     }
 
     @Bean
@@ -24,12 +33,10 @@ public class RollbarConfiguration {
                                                .accessToken();
 
         Config config = ConfigBuilder.withAccessToken(accessToken)
+                                     .environment(this.environment)
+                                     .codeVersion(this.codeVersion)
                                      .build();
 
-        Rollbar rollbar = Rollbar.init(config);
-
-        rollbar.log("Hello, Rollbar");
-
-        return rollbar;
+        return Rollbar.init(config);
     }
 }

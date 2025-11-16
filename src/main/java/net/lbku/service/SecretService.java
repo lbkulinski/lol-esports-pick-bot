@@ -20,9 +20,9 @@ public final class SecretService {
 
     @Autowired
     public SecretService(
-        @Value("${app.aws.secrets-manager.id}") String secretId,
         SecretsManagerClient secretsManagerClient,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        @Value("${app.aws.secrets-manager.id}") String secretId
     ) {
         this.secret = readSecrets(secretId, secretsManagerClient, objectMapper);
     }

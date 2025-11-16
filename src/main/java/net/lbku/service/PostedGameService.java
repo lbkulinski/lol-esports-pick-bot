@@ -17,8 +17,8 @@ public final class PostedGameService {
 
     @Autowired
     public PostedGameService(
-        @Value("${app.aws.dynamodb.tables.posted-games}") String tableName,
-        DynamoDbEnhancedClient dynamoDbClient
+        DynamoDbEnhancedClient dynamoDbClient,
+        @Value("${app.aws.dynamodb.tables.posted-games}") String tableName
     ) {
         TableSchema<PostedGame> tableSchema = TableSchema.fromImmutableClass(PostedGame.class);
 

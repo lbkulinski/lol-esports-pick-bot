@@ -16,8 +16,8 @@ public final class ChampionConfigurationService {
 
     @Autowired
     public ChampionConfigurationService(
-        @Value("${app.aws.dynamodb.tables.champion-configurations}") String tableName,
-        DynamoDbEnhancedClient dynamoDbClient
+        DynamoDbEnhancedClient dynamoDbClient,
+        @Value("${app.aws.dynamodb.tables.champion-configurations}") String tableName
     ) {
         TableSchema<ChampionConfiguration> tableSchema = TableSchema.fromImmutableClass(
             ChampionConfiguration.class

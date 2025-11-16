@@ -1,4 +1,7 @@
 app:
+  rollbar:
+    environment: ${APP_ROLLBAR_ENVIRONMENT}
+    code-version: ${GITHUB_SHA}
   aws:
     secrets-manager:
       id: ${APP_AWS_SECRETS_MANAGER_ID}
