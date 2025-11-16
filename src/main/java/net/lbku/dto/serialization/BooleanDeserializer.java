@@ -13,6 +13,10 @@ public final class BooleanDeserializer extends StdDeserializer<Boolean> {
         super(vc);
     }
 
+    public BooleanDeserializer() {
+        this(null);
+    }
+
     @Override
     public Boolean deserialize(
         JsonParser jsonParser,
