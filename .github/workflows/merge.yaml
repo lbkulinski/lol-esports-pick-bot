@@ -27,7 +27,7 @@ jobs:
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          distribution: corretto
+          distribution: 'corretto'
           java-version: '25'
 
       - name: Configure AWS credentials
