@@ -51,12 +51,12 @@ jobs:
       - name: Upload artifact to S3
         run: |
           FILE='${{ steps.package.outputs.deployment-file }}'
-          aws s3 cp "$FILE" "s3://cta-holiday-bot-lambda-deploy-prod/${{ github.sha }}.jar"
+          aws s3 cp "$FILE" "s3://lol-esports-pick-bot-lambda-deploy-prod/${{ github.sha }}.jar"
 
       - name: Update Lambda from S3
         run: |
           aws lambda update-function-code \
             --function-name "${{ env.LAMBDA_FUNCTION_NAME }}" \
-            --s3-bucket "cta-holiday-bot-lambda-deploy-prod" \
+            --s3-bucket "lol-esports-pick-bot-lambda-deploy-prod" \
             --s3-key "${{ github.sha }}.jar" \
             --publish
