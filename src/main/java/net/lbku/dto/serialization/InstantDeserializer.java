@@ -11,6 +11,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 public final class InstantDeserializer extends StdDeserializer<Instant> {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public InstantDeserializer() {
         super(Instant.class);
     }
@@ -22,9 +24,7 @@ public final class InstantDeserializer extends StdDeserializer<Instant> {
     ) throws IOException {
         String string = jsonParser.getText();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        return LocalDateTime.parse(string, formatter)
+        return LocalDateTime.parse(string, FORMATTER)
                             .atOffset(ZoneOffset.UTC)
                             .toInstant();
     }
