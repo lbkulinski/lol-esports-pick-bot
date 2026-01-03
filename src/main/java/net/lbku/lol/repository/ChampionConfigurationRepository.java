@@ -1,21 +1,19 @@
-package net.lbku.service;
+package net.lbku.lol.repository;
 
-import net.lbku.model.ChampionConfiguration;
+import net.lbku.lol.model.ChampionConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
-import java.util.List;
-
-@Service
-public final class ChampionConfigurationService {
+@Repository
+public final class ChampionConfigurationRepository {
     private final DynamoDbTable<ChampionConfiguration> configurations;
 
     @Autowired
-    public ChampionConfigurationService(
+    public ChampionConfigurationRepository(
         DynamoDbEnhancedClient dynamoDbClient,
         @Value("${app.aws.dynamodb.tables.champion-configurations}") String tableName
     ) {
@@ -26,7 +24,7 @@ public final class ChampionConfigurationService {
         this.configurations = dynamoDbClient.table(tableName, tableSchema);
     }
 
-    public List<ChampionConfiguration> getConfigurations() {
+    public Iterable<ChampionConfiguration> findAll() {
         return this.configurations.scan()
                                   .items()
                                   .stream()

@@ -1,15 +1,18 @@
-package net.lbku.service;
+package net.lbku.social.service;
 
-import net.lbku.model.ChampionConfiguration;
+import net.lbku.lol.model.ChampionConfiguration;
 import net.lbku.dto.Game;
-import net.lbku.model.PostedGame;
+import net.lbku.lol.model.PostedGame;
+import net.lbku.lol.repository.ChampionConfigurationRepository;
+import net.lbku.lol.service.GameService;
+import net.lbku.lol.repository.PostedGameRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public final class PostService {
@@ -17,32 +20,30 @@ public final class PostService {
 
     private static final String TWEET_TEMPLATE = "%s played %s at %s! %s";
 
-    private final ChampionConfigurationService configurationService;
+    private final ChampionConfigurationRepository configurationRepository;
     private final GameService gameService;
-    private final PostedGameService postedGameService;
+    private final PostedGameRepository postedGameRepository;
     private final TwitterService twitterService;
 
     @Autowired
     public PostService(
-        ChampionConfigurationService configurationService,
+        ChampionConfigurationRepository configurationRepository,
         GameService gameService,
-        PostedGameService postedGameService,
+        PostedGameRepository postedGameRepository,
         TwitterService twitterService
     ) {
-        this.configurationService = configurationService;
+        this.configurationRepository = configurationRepository;
         this.gameService = gameService;
-        this.postedGameService = postedGameService;
+        this.postedGameRepository = postedGameRepository;
         this.twitterService = twitterService;
     }
 
     public void postNewGames() {
-        this.configurationService.getConfigurations()
-                                 .forEach(this::postChampionGames);
+        this.configurationRepository.findAll()
+                                    .forEach(this::postChampionGames);
     }
 
     private void postChampionGames(ChampionConfiguration configuration) {
-        Objects.requireNonNull(configuration);
-
         if (!configuration.isEnabled()) {
             return;
         }
@@ -52,9 +53,9 @@ public final class PostService {
         for (Game game : games) {
             String id = game.id();
 
-            PostedGame postedGame = this.postedGameService.getPostedGame(id);
+            Optional<PostedGame> optionalGame = this.postedGameRepository.findById(id);
 
-            if (postedGame != null) {
+            if (optionalGame.isPresent()) {
                 continue;
             }
 
@@ -64,7 +65,7 @@ public final class PostService {
                                            .id(id)
                                            .build();
 
-            this.postedGameService.createPostedGame(newGame);
+            this.postedGameRepository.save(newGame);
 
             String championName = configuration.getDisplayName();
 
@@ -73,9 +74,6 @@ public final class PostService {
     }
 
     private void tweetGame(ChampionConfiguration configuration, Game game) {
-        Objects.requireNonNull(configuration);
-        Objects.requireNonNull(game);
-
         String championName = configuration.getDisplayName();
 
         String text = String.format(TWEET_TEMPLATE, game.player(), championName, game.tournament(), game.vod());

@@ -1,24 +1,17 @@
-package net.lbku.model;
+package net.lbku.lol.model;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Value;
+import org.jspecify.annotations.NullMarked;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbImmutable;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 @Value
 @Builder(toBuilder = true)
-@DynamoDbImmutable(builder = ChampionConfiguration.ChampionConfigurationBuilder.class)
-public class ChampionConfiguration {
-    @NonNull
+@NullMarked
+@DynamoDbImmutable(builder = PostedGame.PostedGameBuilder.class)
+public class PostedGame {
     @Getter(onMethod_ = @DynamoDbPartitionKey)
     String id;
-
-    @NonNull
-    @Getter
-    String displayName;
-
-    @Getter
-    boolean enabled;
 }

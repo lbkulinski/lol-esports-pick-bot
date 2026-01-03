@@ -1,10 +1,9 @@
 package net.lbku.dto.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -18,11 +17,8 @@ public final class InstantDeserializer extends StdDeserializer<Instant> {
     }
 
     @Override
-    public Instant deserialize(
-        JsonParser jsonParser,
-        DeserializationContext deserializationContext
-    ) throws IOException {
-        String string = jsonParser.getText();
+    public Instant deserialize(JsonParser jsonParser, DeserializationContext context) {
+        String string = jsonParser.getString();
 
         return LocalDateTime.parse(string, FORMATTER)
                             .atOffset(ZoneOffset.UTC)
