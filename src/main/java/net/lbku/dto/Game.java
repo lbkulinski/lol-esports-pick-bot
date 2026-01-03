@@ -1,9 +1,9 @@
 package net.lbku.dto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import net.lbku.dto.serialization.BooleanDeserializer;
 import net.lbku.dto.serialization.InstantDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.time.Instant;
 

@@ -1,10 +1,8 @@
 package net.lbku.dto.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 public final class BooleanDeserializer extends StdDeserializer<Boolean> {
     private static final String TRUE_MAPPING = "Yes";
@@ -14,11 +12,8 @@ public final class BooleanDeserializer extends StdDeserializer<Boolean> {
     }
 
     @Override
-    public Boolean deserialize(
-        JsonParser jsonParser,
-        DeserializationContext deserializationContext
-    ) throws IOException {
-        String string = jsonParser.getText();
+    public Boolean deserialize(JsonParser jsonParser, DeserializationContext context) {
+        String string = jsonParser.getString();
 
         return string.equalsIgnoreCase(TRUE_MAPPING);
     }
