@@ -1,24 +1,30 @@
-package net.lbku.service;
+package net.lbku.lol.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.lbku.dto.GameWrapper;
-import net.lbku.exception.GameServiceException;
-import net.lbku.model.ChampionConfiguration;
+import net.lbku.lol.exception.GameServiceException;
+import net.lbku.lol.model.ChampionConfiguration;
 import net.lbku.dto.Game;
 import net.lbku.dto.GameResponse;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.*;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
-import org.apache.hc.core5.net.URIBuilder;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public final class GameService {
@@ -54,7 +60,9 @@ public final class GameService {
     }
 
     public List<Game> getGames(ChampionConfiguration config) {
-        Objects.requireNonNull(config);
+        if (config == null) {
+            throw new IllegalArgumentException("config must not be null");
+        }
 
         URI uri = this.buildUri(config);
 
@@ -119,8 +127,9 @@ public final class GameService {
         return uri;
     }
 
-    private GameResponse handleResponse(ClassicHttpResponse httpResponse) {
-        int statusCode = httpResponse.getCode();
+    private GameResponse handleResponse(HttpResponse httpResponse) {
+        int statusCode = httpResponse.getStatusLine()
+                                     .getStatusCode();
 
         if (statusCode != HttpStatus.SC_OK) {
             String message = String.format("Received non-OK response: %d", statusCode);
@@ -144,7 +153,7 @@ public final class GameService {
 
         try {
             gameResponse = this.objectMapper.readValue(stringEntity, GameResponse.class);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             String message = "Failed to deserialize game data";
 
             throw new GameServiceException(message, e);

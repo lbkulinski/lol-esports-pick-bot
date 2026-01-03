@@ -1,22 +1,22 @@
-package net.lbku.service;
+package net.lbku.lol.repository;
 
-import net.lbku.model.PostedGame;
+import net.lbku.lol.model.PostedGame;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
-import java.util.Objects;
+import java.util.Optional;
 
-@Service
-public final class PostedGameService {
+@Repository
+public final class PostedGameRepository {
     private final DynamoDbTable<PostedGame> postedGames;
 
     @Autowired
-    public PostedGameService(
+    public PostedGameRepository(
         DynamoDbEnhancedClient dynamoDbClient,
         @Value("${app.aws.dynamodb.tables.posted-games}") String tableName
     ) {
@@ -25,19 +25,25 @@ public final class PostedGameService {
         this.postedGames = dynamoDbClient.table(tableName, tableSchema);
     }
 
-    public void createPostedGame(PostedGame postedGame) {
-        Objects.requireNonNull(postedGame);
+    public void save(PostedGame entity) {
+        if (entity == null) {
+            throw new IllegalArgumentException("entity must not be null");
+        }
 
-        this.postedGames.putItem(postedGame);
+        this.postedGames.putItem(entity);
     }
 
-    public PostedGame getPostedGame(String gameId) {
-        Objects.requireNonNull(gameId);
+    public Optional<PostedGame> findById(String id) {
+        if (id == null) {
+            throw new IllegalArgumentException("id must not be null");
+        }
 
         Key key = Key.builder()
-                     .partitionValue(gameId)
+                     .partitionValue(id)
                      .build();
 
-        return this.postedGames.getItem(key);
+        PostedGame postedGame = this.postedGames.getItem(key);
+
+        return Optional.ofNullable(postedGame);
     }
 }

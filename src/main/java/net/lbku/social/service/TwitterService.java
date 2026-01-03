@@ -1,4 +1,4 @@
-package net.lbku.service;
+package net.lbku.social.service;
 
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi10a;
@@ -7,22 +7,18 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
-import net.lbku.dto.Secret;
-import net.lbku.exception.TwitterServiceException;
-import org.apache.hc.core5.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.lbku.aws.client.AwsSecretsClient;
+import net.lbku.aws.dto.Secret;
+import net.lbku.social.exception.TwitterServiceException;
+import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 @Service
 public final class TwitterService {
-    private static final Logger log = LoggerFactory.getLogger(TwitterService.class);
-
     private static final String TWITTER_AUTHORIZATION_BASE_URL = "https://api.twitter.com/oauth/authorize";
     private static final String TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
     private static final String TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
@@ -30,16 +26,20 @@ public final class TwitterService {
     private static final String CREATE_TWEET_REQUEST_TEMPLATE = """
     { "text": "%s" }""";
 
-    private final SecretService secretService;
+    private final AwsSecretsClient awsSecretsClient;
 
     @Autowired
-    public TwitterService(SecretService secretService) {
-        this.secretService = secretService;
+    public TwitterService(AwsSecretsClient awsSecretsClient) {
+        this.awsSecretsClient = awsSecretsClient;
     }
 
     public void postTweet(String text) {
-        Secret.TwitterSecret secret = this.secretService.getSecret()
-                                                        .twitter();
+        if (text == null) {
+            throw new IllegalArgumentException("text must not be null");
+        }
+
+        Secret.TwitterSecret secret = this.awsSecretsClient.getAppSecret()
+                                                           .twitter();
 
         OAuth1AccessToken accessToken = new OAuth1AccessToken(secret.accessToken(), secret.accessSecret());
 
@@ -73,9 +73,6 @@ public final class TwitterService {
     }
 
     private OAuth10aService getService(String consumerKey, String consumerSecret) {
-        Objects.requireNonNull(consumerKey);
-        Objects.requireNonNull(consumerSecret);
-
         return new ServiceBuilder(consumerKey)
             .apiSecret(consumerSecret)
             .build(new DefaultApi10a() {

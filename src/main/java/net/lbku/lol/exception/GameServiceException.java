@@ -1,6 +1,6 @@
-package net.lbku.exception;
+package net.lbku.lol.exception;
 
-public class GameServiceException extends RuntimeException {
+public final class GameServiceException extends RuntimeException {
     public GameServiceException(String message) {
         super(message);
     }

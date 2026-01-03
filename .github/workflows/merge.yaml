@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
-          java-version: '21'
+          java-version: '25'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -40,13 +40,28 @@ jobs:
         id: package
         run: |
           set -Eeuo pipefail
-          mvn -B clean package shade:shade
-          BUILD_DIR=$(mvn help:evaluate -Dexpression=project.build.directory -q -DforceStdout)
-          JAR_FILE=$(ls "${BUILD_DIR}" | grep '.jar$' | grep -v '^original')
-          DEPLOY_DIR="${BUILD_DIR}/deployment"
-          mkdir -p "$DEPLOY_DIR"
-          cp "${BUILD_DIR}/${JAR_FILE}" "${DEPLOY_DIR}/${JAR_FILE}"
-          echo "deployment-file=${DEPLOY_DIR}/${JAR_FILE}" >> "$GITHUB_OUTPUT"
+          mvn -B -DskipTests clean package
+
+          BUILD_DIR="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.build.directory)"
+          FINAL_NAME="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.build.finalName)"
+
+          JAR_FILE="${BUILD_DIR}/${FINAL_NAME}-aws.jar"
+
+          if [ ! -f "${JAR_FILE}" ]; then
+            echo "ERROR: Expected shaded aws jar not found at ${JAR_FILE}"
+            echo "Build dir contents:"
+            ls -lah "${BUILD_DIR}"
+            exit 1
+          fi
+
+          echo "Will deploy: ${JAR_FILE}"
+          ls -lah "${BUILD_DIR}"
+
+          jar tf "${JAR_FILE}" | head -n 20
+          jar xf "${JAR_FILE}" META-INF/MANIFEST.MF
+          grep -E "^(Start-Class|Main-Class):" META-INF/MANIFEST.MF || true
+
+          echo "deployment-file=${JAR_FILE}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact to S3
         run: |

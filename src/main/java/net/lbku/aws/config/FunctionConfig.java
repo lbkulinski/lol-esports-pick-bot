@@ -1,9 +1,7 @@
-package net.lbku.config;
+package net.lbku.aws.config;
 
 import com.rollbar.notifier.Rollbar;
-import net.lbku.service.PostService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.lbku.social.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,12 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import java.util.function.Supplier;
 
 @Configuration
-public class FunctionConfiguration {
+public class FunctionConfig {
     private final PostService postService;
     private final Rollbar rollbar;
 
     @Autowired
-    public FunctionConfiguration(
+    public FunctionConfig(
         PostService postService,
         Rollbar rollbar
     ) {
