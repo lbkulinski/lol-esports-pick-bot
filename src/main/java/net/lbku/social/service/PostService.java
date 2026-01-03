@@ -20,27 +20,27 @@ public final class PostService {
 
     private static final String TWEET_TEMPLATE = "%s played %s at %s! %s";
 
-    private final ChampionConfigurationRepository configurationService;
+    private final ChampionConfigurationRepository configurationRepository;
     private final GameService gameService;
     private final PostedGameRepository postedGameRepository;
     private final TwitterService twitterService;
 
     @Autowired
     public PostService(
-        ChampionConfigurationRepository configurationService,
+        ChampionConfigurationRepository configurationRepository,
         GameService gameService,
         PostedGameRepository postedGameRepository,
         TwitterService twitterService
     ) {
-        this.configurationService = configurationService;
+        this.configurationRepository = configurationRepository;
         this.gameService = gameService;
         this.postedGameRepository = postedGameRepository;
         this.twitterService = twitterService;
     }
 
     public void postNewGames() {
-        this.configurationService.findAll()
-                                 .forEach(this::postChampionGames);
+        this.configurationRepository.findAll()
+                                    .forEach(this::postChampionGames);
     }
 
     private void postChampionGames(ChampionConfiguration configuration) {
