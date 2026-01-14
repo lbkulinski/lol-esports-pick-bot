@@ -1,4 +1,4 @@
-package net.lbku.dto;
+package net.lbku.lol.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

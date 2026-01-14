@@ -1,4 +1,4 @@
-package net.lbku.dto.serialization;
+package net.lbku.lol.dto.serialization;
 
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;

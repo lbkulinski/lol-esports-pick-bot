@@ -1,10 +1,10 @@
-package net.lbku.lol.service;
+package net.lbku.lol.client;
 
-import net.lbku.dto.GameWrapper;
-import net.lbku.lol.exception.GameServiceException;
+import net.lbku.lol.dto.GameWrapper;
+import net.lbku.lol.exception.LolFandomException;
 import net.lbku.lol.model.ChampionConfiguration;
-import net.lbku.dto.Game;
-import net.lbku.dto.GameResponse;
+import net.lbku.lol.dto.Game;
+import net.lbku.lol.dto.GameResponse;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public final class GameService {
+public final class LolFandomClient {
     private static final String SCHEMA = "https";
     private static final String HOST = "lol.fandom.com";
     private static final String PATH = "/api.php";
@@ -51,7 +51,7 @@ public final class GameService {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public GameService(
+    public LolFandomClient(
         CloseableHttpClient httpClient,
         ObjectMapper objectMapper
     ) {
@@ -77,7 +77,7 @@ public final class GameService {
 
             String message = String.format("Failed to fetch game data for champion: %s", championName);
 
-            throw new GameServiceException(message, e);
+            throw new LolFandomException(message, e);
         }
 
         List<GameWrapper> wrappers = gameResponse.gameWrappers();
@@ -121,7 +121,7 @@ public final class GameService {
         } catch (URISyntaxException e) {
             String message = String.format("Failed to build URI for champion: %s", championName);
 
-            throw new GameServiceException(message, e);
+            throw new LolFandomException(message, e);
         }
 
         return uri;
@@ -131,10 +131,10 @@ public final class GameService {
         int statusCode = httpResponse.getStatusLine()
                                      .getStatusCode();
 
-        if (statusCode != HttpStatus.SC_OK) {
-            String message = String.format("Received non-OK response: %d", statusCode);
+        if ((statusCode < HttpStatus.SC_OK) || (statusCode >= HttpStatus.SC_MULTIPLE_CHOICES)) {
+            String message = String.format("Received non-200 response: %d", statusCode);
 
-            throw new GameServiceException(message);
+            throw new LolFandomException(message);
         }
 
         HttpEntity httpEntity = httpResponse.getEntity();
@@ -146,7 +146,7 @@ public final class GameService {
         } catch (IOException | ParseException e) {
             String message = "Failed to read game data";
 
-            throw new GameServiceException(message, e);
+            throw new LolFandomException(message, e);
         }
 
         GameResponse gameResponse;
@@ -156,7 +156,7 @@ public final class GameService {
         } catch (JacksonException e) {
             String message = "Failed to deserialize game data";
 
-            throw new GameServiceException(message, e);
+            throw new LolFandomException(message, e);
         }
 
         return gameResponse;
