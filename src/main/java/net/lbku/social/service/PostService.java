@@ -1,11 +1,13 @@
 package net.lbku.social.service;
 
 import net.lbku.lol.model.ChampionConfiguration;
-import net.lbku.dto.Game;
+import net.lbku.lol.dto.Game;
 import net.lbku.lol.model.PostedGame;
 import net.lbku.lol.repository.ChampionConfigurationRepository;
-import net.lbku.lol.service.GameService;
+import net.lbku.lol.client.LolFandomClient;
 import net.lbku.lol.repository.PostedGameRepository;
+import net.lbku.mediawiki.client.MediaWikiClient;
+import net.lbku.social.client.TwitterClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,24 +23,31 @@ public final class PostService {
     private static final String TWEET_TEMPLATE = "%s played %s at %s! %s";
 
     private final ChampionConfigurationRepository configurationRepository;
-    private final GameService gameService;
+    private final MediaWikiClient mediaWikiClient;
+    private final LolFandomClient lolFandomClient;
     private final PostedGameRepository postedGameRepository;
-    private final TwitterService twitterService;
+    private final TwitterClient twitterClient;
 
     @Autowired
     public PostService(
         ChampionConfigurationRepository configurationRepository,
-        GameService gameService,
+        MediaWikiClient mediaWikiClient,
+        LolFandomClient lolFandomClient,
         PostedGameRepository postedGameRepository,
-        TwitterService twitterService
+        TwitterClient twitterClient
     ) {
         this.configurationRepository = configurationRepository;
-        this.gameService = gameService;
+        this.mediaWikiClient = mediaWikiClient;
+        this.lolFandomClient = lolFandomClient;
         this.postedGameRepository = postedGameRepository;
-        this.twitterService = twitterService;
+        this.twitterClient = twitterClient;
     }
 
     public void postNewGames() {
+        String loginToken = this.mediaWikiClient.getLoginToken();
+
+        this.mediaWikiClient.login(loginToken);
+
         this.configurationRepository.findAll()
                                     .forEach(this::postChampionGames);
     }
@@ -48,7 +57,7 @@ public final class PostService {
             return;
         }
 
-        List<Game> games = this.gameService.getGames(configuration);
+        List<Game> games = this.lolFandomClient.getGames(configuration);
 
         for (Game game : games) {
             String id = game.id();
@@ -78,6 +87,6 @@ public final class PostService {
 
         String text = String.format(TWEET_TEMPLATE, game.player(), championName, game.tournament(), game.vod());
 
-        this.twitterService.postTweet(text);
+        this.twitterClient.postTweet(text);
     }
 }

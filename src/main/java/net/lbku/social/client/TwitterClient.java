@@ -1,4 +1,4 @@
-package net.lbku.social.service;
+package net.lbku.social.client;
 
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi10a;
@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 @Service
-public final class TwitterService {
+public final class TwitterClient {
     private static final String TWITTER_AUTHORIZATION_BASE_URL = "https://api.twitter.com/oauth/authorize";
     private static final String TWITTER_REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token";
     private static final String TWITTER_ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token";
@@ -29,7 +29,7 @@ public final class TwitterService {
     private final AwsSecretsClient awsSecretsClient;
 
     @Autowired
-    public TwitterService(AwsSecretsClient awsSecretsClient) {
+    public TwitterClient(AwsSecretsClient awsSecretsClient) {
         this.awsSecretsClient = awsSecretsClient;
     }
 
