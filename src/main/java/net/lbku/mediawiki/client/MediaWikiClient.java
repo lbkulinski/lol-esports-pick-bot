@@ -55,7 +55,9 @@ public final class MediaWikiClient {
         try {
             token = this.httpClient.execute(httpPost, this::handleGetTokenResponse);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            String message = "Failed to get login token";
+
+            throw new MediaWikiException(message, e);
         }
 
         return token;
@@ -71,7 +73,9 @@ public final class MediaWikiClient {
         try {
             this.httpClient.execute(httpPost, this::handleLoginResponse);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            String message = "Failed to login to MediaWiki";
+
+            throw new MediaWikiException(message, e);
         }
     }
 
