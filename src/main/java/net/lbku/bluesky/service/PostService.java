@@ -1,4 +1,4 @@
-package net.lbku.social.service;
+package net.lbku.bluesky.service;
 
 import net.lbku.lol.model.ChampionConfiguration;
 import net.lbku.lol.dto.Game;
@@ -7,7 +7,7 @@ import net.lbku.lol.repository.ChampionConfigurationRepository;
 import net.lbku.lol.client.LolFandomClient;
 import net.lbku.lol.repository.PostedGameRepository;
 import net.lbku.mediawiki.client.MediaWikiClient;
-import net.lbku.social.client.TwitterClient;
+import net.lbku.bluesky.client.BlueskyClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public final class PostService {
     private final MediaWikiClient mediaWikiClient;
     private final LolFandomClient lolFandomClient;
     private final PostedGameRepository postedGameRepository;
-    private final TwitterClient twitterClient;
+    private final BlueskyClient blueskyClient;
 
     @Autowired
     public PostService(
@@ -34,13 +34,13 @@ public final class PostService {
         MediaWikiClient mediaWikiClient,
         LolFandomClient lolFandomClient,
         PostedGameRepository postedGameRepository,
-        TwitterClient twitterClient
+        BlueskyClient blueskyClient
     ) {
         this.configurationRepository = configurationRepository;
         this.mediaWikiClient = mediaWikiClient;
         this.lolFandomClient = lolFandomClient;
         this.postedGameRepository = postedGameRepository;
-        this.twitterClient = twitterClient;
+        this.blueskyClient = blueskyClient;
     }
 
     public void postNewGames() {
@@ -87,6 +87,6 @@ public final class PostService {
 
         String text = String.format(TWEET_TEMPLATE, game.player(), championName, game.tournament(), game.vod());
 
-        this.twitterClient.postTweet(text);
+        this.blueskyClient.post(text);
     }
 }

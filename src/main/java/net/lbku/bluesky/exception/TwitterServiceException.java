@@ -1,4 +1,4 @@
-package net.lbku.social.exception;
+package net.lbku.bluesky.exception;
 
 public class TwitterServiceException extends RuntimeException {
     public TwitterServiceException(String message) {
