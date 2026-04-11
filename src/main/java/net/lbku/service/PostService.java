@@ -11,6 +11,7 @@ import net.lbku.lol.client.LolFandomClient;
 import net.lbku.lol.repository.PostedGameRepository;
 import net.lbku.mediawiki.client.MediaWikiClient;
 import net.lbku.bluesky.client.BlueskyClient;
+import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@NullMarked
 public final class PostService {
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
 

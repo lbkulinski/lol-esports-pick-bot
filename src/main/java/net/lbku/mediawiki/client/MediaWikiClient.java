@@ -13,6 +13,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
+@NullMarked
 public final class MediaWikiClient {
     private static final String SCHEMA = "https";
     private static final String HOST = "lol.fandom.com";
@@ -64,9 +66,7 @@ public final class MediaWikiClient {
     }
 
     public void login(String loginToken) {
-        if (loginToken == null) {
-            throw new IllegalArgumentException("loginToken must not be null");
-        }
+        Objects.requireNonNull(loginToken, "loginToken must not be null");
 
         HttpPost httpPost = this.buildLoginRequest(loginToken);
 
