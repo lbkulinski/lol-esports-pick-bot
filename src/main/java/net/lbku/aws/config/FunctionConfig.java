@@ -1,7 +1,7 @@
 package net.lbku.aws.config;
 
 import com.rollbar.notifier.Rollbar;
-import net.lbku.bluesky.service.PostService;
+import net.lbku.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
