@@ -1,9 +1,11 @@
 package net.lbku.lol.dto.serialization;
 
+import org.jspecify.annotations.NullMarked;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.deser.std.StdDeserializer;
 
+@NullMarked
 public final class BooleanDeserializer extends StdDeserializer<Boolean> {
     private static final String TRUE_MAPPING = "Yes";
 

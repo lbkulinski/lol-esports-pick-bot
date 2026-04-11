@@ -1,6 +1,7 @@
 package net.lbku.lol.repository;
 
 import net.lbku.lol.model.ChampionConfiguration;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -9,6 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
 @Repository
+@NullMarked
 public final class ChampionConfigurationRepository {
     private final DynamoDbTable<ChampionConfiguration> configurations;
 

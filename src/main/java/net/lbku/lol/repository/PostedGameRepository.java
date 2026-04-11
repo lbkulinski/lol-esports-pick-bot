@@ -1,6 +1,7 @@
 package net.lbku.lol.repository;
 
 import net.lbku.lol.model.PostedGame;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -9,9 +10,11 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
+@NullMarked
 public final class PostedGameRepository {
     private final DynamoDbTable<PostedGame> postedGames;
 
@@ -26,17 +29,13 @@ public final class PostedGameRepository {
     }
 
     public void save(PostedGame entity) {
-        if (entity == null) {
-            throw new IllegalArgumentException("entity must not be null");
-        }
+        Objects.requireNonNull(entity, "entity must not be null");
 
         this.postedGames.putItem(entity);
     }
 
     public Optional<PostedGame> findById(String id) {
-        if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
-        }
+        Objects.requireNonNull(id, "id must not be null");
 
         Key key = Key.builder()
                      .partitionValue(id)

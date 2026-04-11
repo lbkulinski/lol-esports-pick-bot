@@ -15,6 +15,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -24,9 +25,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
+@NullMarked
 public final class LolFandomClient {
     private static final String SCHEMA = "https";
     private static final String HOST = "lol.fandom.com";
@@ -60,9 +63,7 @@ public final class LolFandomClient {
     }
 
     public List<Game> getGames(ChampionConfiguration config) {
-        if (config == null) {
-            throw new IllegalArgumentException("config must not be null");
-        }
+        Objects.requireNonNull(config, "config must not be null");
 
         URI uri = this.buildUri(config);
 
@@ -82,7 +83,7 @@ public final class LolFandomClient {
 
         List<GameWrapper> wrappers = gameResponse.gameWrappers();
 
-        if ((wrappers == null) || wrappers.isEmpty()) {
+        if (wrappers.isEmpty()) {
             return List.of();
         }
 

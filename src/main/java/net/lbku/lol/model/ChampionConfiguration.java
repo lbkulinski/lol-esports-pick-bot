@@ -9,8 +9,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 
 @Value
 @Builder(toBuilder = true)
-@NullMarked
 @DynamoDbImmutable(builder = ChampionConfiguration.ChampionConfigurationBuilder.class)
+@NullMarked
 public class ChampionConfiguration {
     @Getter(onMethod_ = @DynamoDbPartitionKey)
     String id;

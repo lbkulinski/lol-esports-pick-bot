@@ -3,6 +3,7 @@ package net.lbku.aws.client;
 import com.amazonaws.secretsmanager.caching.SecretCache;
 import net.lbku.aws.dto.Secret;
 import net.lbku.aws.exception.SecretsClientException;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
+@NullMarked
 public final class AwsSecretsClient {
     private final SecretCache secretCache;
     private final ObjectMapper objectMapper;
