@@ -1,6 +1,6 @@
 package net.lbku.bluesky.exception;
 
-public class BlueskyException extends RuntimeException {
+public final class BlueskyException extends RuntimeException {
     public BlueskyException(String message) {
         super(message);
     }
