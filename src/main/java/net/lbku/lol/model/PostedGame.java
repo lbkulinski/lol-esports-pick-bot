@@ -9,8 +9,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 
 @Value
 @Builder(toBuilder = true)
-@NullMarked
 @DynamoDbImmutable(builder = PostedGame.PostedGameBuilder.class)
+@NullMarked
 public class PostedGame {
     @Getter(onMethod_ = @DynamoDbPartitionKey)
     String id;

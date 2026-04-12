@@ -1,5 +1,6 @@
 package net.lbku.lol.dto.serialization;
 
+import org.jspecify.annotations.NullMarked;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.deser.std.StdDeserializer;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
+@NullMarked
 public final class InstantDeserializer extends StdDeserializer<Instant> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -24,6 +26,4 @@ public final class InstantDeserializer extends StdDeserializer<Instant> {
                             .atOffset(ZoneOffset.UTC)
                             .toInstant();
     }
-
-
 }

@@ -10,3 +10,5 @@ app:
       tables:
         champion-configurations: ${APP_AWS_DYNAMODB_TABLES_CHAMPION_CONFIGURATIONS}
         posted-games: ${APP_AWS_DYNAMODB_TABLES_POSTED_GAMES}
+  bluesky:
+    handle: ${APP_BLUESKY_HANDLE}
