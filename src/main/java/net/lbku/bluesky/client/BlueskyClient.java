@@ -160,7 +160,7 @@ public final class BlueskyClient {
                 int statusCode = httpResponse.getStatusLine()
                                              .getStatusCode();
 
-                if (statusCode != HttpStatus.SC_CREATED) {
+                if (statusCode != HttpStatus.SC_OK) {
                     String message = "Failed to create record with Bluesky, response code: %d".formatted(statusCode);
 
                     throw new BlueskyException(message);
