@@ -13,6 +13,7 @@ import net.lbku.lol.repository.ChampionConfigurationRepository;
 import net.lbku.lol.client.LolFandomClient;
 import net.lbku.lol.repository.PostedGameRepository;
 import net.lbku.bluesky.client.BlueskyClient;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,29 +24,30 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@NullMarked
 public final class PostService {
     private static final String POST_TEMPLATE = "%s played %s at %s!";
     private static final String TITLE_TEMPLATE = "%s's Draven - %s";
 
     private final SecretsClient secretsClient;
+    private final BlueskyClient blueskyClient;
     private final ChampionConfigurationRepository configRepository;
     private final LolFandomClient lolFandomClient;
     private final PostedGameRepository postedGameRepository;
-    private final BlueskyClient blueskyClient;
 
     @Autowired
     public PostService(
         SecretsClient secretsClient,
+        BlueskyClient blueskyClient,
         ChampionConfigurationRepository configRepository,
         LolFandomClient lolFandomClient,
-        PostedGameRepository postedGameRepository,
-        BlueskyClient blueskyClient
+        PostedGameRepository postedGameRepository
     ) {
         this.secretsClient = secretsClient;
+        this.blueskyClient = blueskyClient;
         this.configRepository = configRepository;
         this.lolFandomClient = lolFandomClient;
         this.postedGameRepository = postedGameRepository;
-        this.blueskyClient = blueskyClient;
     }
 
     public void postNewGames() {

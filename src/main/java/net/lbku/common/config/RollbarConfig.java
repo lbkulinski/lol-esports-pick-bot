@@ -1,41 +1,31 @@
 package net.lbku.common.config;
 
 import com.rollbar.notifier.Rollbar;
-import com.rollbar.notifier.config.Config;
 import com.rollbar.notifier.config.ConfigBuilder;
 import net.lbku.aws.client.SecretsClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RollbarConfig {
-    private final SecretsClient awsSecretsClient;
-    private final String environment;
-    private final String codeVersion;
-
-    @Autowired
-    public RollbarConfig(
-        SecretsClient awsSecretsClient,
-        @Value("${app.rollbar.environment}" ) String environment,
-        @Value("${app.rollbar.code-version}" ) String codeVersion
-    ) {
-        this.awsSecretsClient = awsSecretsClient;
-        this.environment = environment;
-        this.codeVersion = codeVersion;
-    }
-
     @Bean
-    public Rollbar rollbar() {
-        String accessToken = this.awsSecretsClient.getAppSecret()
-                                                  .rollbar()
-                                                  .accessToken();
+    public Rollbar rollbar(
+        SecretsClient secretsClient,
+        BuildProperties buildProperties,
+        @Value("${app.rollbar.environment}" ) String environment
+    ) {
+        String accessToken = secretsClient.getAppSecret()
+                                          .rollbar()
+                                          .accessToken();
 
-        Config config = ConfigBuilder.withAccessToken(accessToken)
-                                     .environment(this.environment)
-                                     .codeVersion(this.codeVersion)
-                                     .build();
+        String codeVersion = buildProperties.getVersion();
+
+        var config = ConfigBuilder.withAccessToken(accessToken)
+                                  .environment(environment)
+                                  .codeVersion(codeVersion)
+                                  .build();
 
         return Rollbar.init(config);
     }

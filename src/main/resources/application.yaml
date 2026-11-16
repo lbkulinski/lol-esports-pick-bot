@@ -1,7 +1,6 @@
 app:
   rollbar:
     environment: ${APP_ROLLBAR_ENVIRONMENT}
-    code-version: ${APP_ROLLBAR_CODE_VERSION}
   aws:
     region: ${AWS_REGION}
     secrets-manager:

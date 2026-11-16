@@ -6,6 +6,7 @@ import net.lbku.bluesky.dto.ExternalLink;
 import net.lbku.bluesky.dto.Record;
 import net.lbku.bluesky.dto.Session;
 import net.lbku.bluesky.exception.BlueskyException;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 @Component
+@NullMarked
 public final class BlueskyClient {
     private static final String SCHEME = "https";
     private static final String HOST = "bsky.social";

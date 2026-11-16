@@ -24,6 +24,4 @@ public final class InstantDeserializer extends StdDeserializer<Instant> {
                             .atOffset(ZoneOffset.UTC)
                             .toInstant();
     }
-
-
 }

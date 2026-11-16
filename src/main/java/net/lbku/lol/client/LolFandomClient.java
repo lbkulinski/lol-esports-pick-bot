@@ -1,6 +1,5 @@
 package net.lbku.lol.client;
 
-import lombok.extern.slf4j.Slf4j;
 import net.lbku.lol.dto.GameWrapper;
 import net.lbku.lol.exception.LolFandomException;
 import net.lbku.lol.model.ChampionConfiguration;
@@ -20,7 +19,6 @@ import java.util.Objects;
 import java.util.Set;
 
 @Component
-@Slf4j
 @NullMarked
 public final class LolFandomClient {
     private static final String SCHEME = "https";
@@ -33,8 +31,8 @@ public final class LolFandomClient {
     );
 
     private static final String GAME_QUERY_WHERE_TEMPLATE = """
-    ScoreboardPlayers.Champion = '%s' \
-    AND ScoreboardGames.VOD IS NOT NULL AND ScoreboardGames.VOD != ''""";
+        ScoreboardPlayers.Champion = '%s' \
+        AND ScoreboardGames.VOD IS NOT NULL AND ScoreboardGames.VOD != ''""";
 
     private static final Set<String> GAME_QUERY_FIELDS = Set.of(
         "ScoreboardPlayers.GameId",
@@ -57,8 +55,6 @@ public final class LolFandomClient {
 
         URI uri = this.buildUri(config);
 
-        log.info("URI: {}", uri);
-
         GameResponse gameResponse;
 
         try {
@@ -74,7 +70,7 @@ public final class LolFandomClient {
 
         List<GameWrapper> wrappers = gameResponse.gameWrappers();
 
-        if (wrappers == null || wrappers.isEmpty()) {
+        if (wrappers.isEmpty()) {
             return List.of();
         }
 
