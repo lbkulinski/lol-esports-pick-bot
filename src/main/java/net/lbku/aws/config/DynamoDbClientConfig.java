@@ -1,6 +1,5 @@
 package net.lbku.aws.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -9,21 +8,17 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @Configuration
 public class DynamoDbClientConfig {
-    private final Region region;
-
-    @Autowired
-    public DynamoDbClientConfig(Region region) {
-        this.region = region;
+    @Bean
+    public DynamoDbClient dynamoDbClient(Region region) {
+        return DynamoDbClient.builder()
+                             .region(region)
+                             .build();
     }
 
     @Bean
-    public DynamoDbEnhancedClient dynamoDbEnhancedClient() {
-        DynamoDbClient client = DynamoDbClient.builder()
-                                              .region(this.region)
-                                              .build();
-
+    public DynamoDbEnhancedClient dynamoDbEnhancedClient(DynamoDbClient dynamoDbClient) {
         return DynamoDbEnhancedClient.builder()
-                                     .dynamoDbClient(client)
+                                     .dynamoDbClient(dynamoDbClient)
                                      .build();
     }
 }

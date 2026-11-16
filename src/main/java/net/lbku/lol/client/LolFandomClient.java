@@ -1,43 +1,41 @@
 package net.lbku.lol.client;
 
+import lombok.extern.slf4j.Slf4j;
 import net.lbku.lol.dto.GameWrapper;
 import net.lbku.lol.exception.LolFandomException;
 import net.lbku.lol.model.ChampionConfiguration;
 import net.lbku.lol.dto.Game;
 import net.lbku.lol.dto.GameResponse;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
-@Service
+@Component
+@Slf4j
+@NullMarked
 public final class LolFandomClient {
-    private static final String SCHEMA = "https";
+    private static final String SCHEME = "https";
     private static final String HOST = "lol.fandom.com";
     private static final String PATH = "/api.php";
+
     private static final Set<String> GAME_QUERY_TABLES = Set.of(
         "ScoreboardPlayers",
         "ScoreboardGames"
     );
+
     private static final String GAME_QUERY_WHERE_TEMPLATE = """
     ScoreboardPlayers.Champion = '%s' \
     AND ScoreboardGames.VOD IS NOT NULL AND ScoreboardGames.VOD != ''""";
+
     private static final Set<String> GAME_QUERY_FIELDS = Set.of(
         "ScoreboardPlayers.GameId",
         "ScoreboardPlayers.Link",
@@ -47,42 +45,36 @@ public final class LolFandomClient {
         "ScoreboardGames.VOD"
     );
 
-    private final CloseableHttpClient httpClient;
-    private final ObjectMapper objectMapper;
+    private final RestClient restClient;
 
     @Autowired
-    public LolFandomClient(
-        CloseableHttpClient httpClient,
-        ObjectMapper objectMapper
-    ) {
-        this.httpClient = httpClient;
-        this.objectMapper = objectMapper;
+    public LolFandomClient(RestClient.Builder builder) {
+        this.restClient = builder.build();
     }
 
     public List<Game> getGames(ChampionConfiguration config) {
-        if (config == null) {
-            throw new IllegalArgumentException("config must not be null");
-        }
+        Objects.requireNonNull(config);
 
         URI uri = this.buildUri(config);
 
-        HttpGet httpGet = new HttpGet(uri);
+        log.info("URI: {}", uri);
 
         GameResponse gameResponse;
 
         try {
-            gameResponse = this.httpClient.execute(httpGet, this::handleResponse);
-        } catch (IOException e) {
-            String championName = config.getDisplayName();
-
-            String message = String.format("Failed to fetch game data for champion: %s", championName);
+            gameResponse = this.restClient.get()
+                                          .uri(uri)
+                                          .retrieve()
+                                          .requiredBody(GameResponse.class);
+        } catch (RestClientException | IllegalStateException e) {
+            String message = "Failed to fetch game data for champion: %s".formatted(config.displayName());
 
             throw new LolFandomException(message, e);
         }
 
         List<GameWrapper> wrappers = gameResponse.gameWrappers();
 
-        if ((wrappers == null) || wrappers.isEmpty()) {
+        if (wrappers == null || wrappers.isEmpty()) {
             return List.of();
         }
 
@@ -93,72 +85,26 @@ public final class LolFandomClient {
     }
 
     private URI buildUri(ChampionConfiguration config) {
-        String championName = config.getDisplayName();
+        var whereClause = GAME_QUERY_WHERE_TEMPLATE.formatted(config.displayName());
 
-        String whereClause = String.format(GAME_QUERY_WHERE_TEMPLATE, championName);
+        var params = new LinkedMultiValueMap<String, String>();
 
-        List<NameValuePair> params = List.of(
-            new BasicNameValuePair("maxlag","5"),
-            new BasicNameValuePair("tables", String.join(",", GAME_QUERY_TABLES)),
-            new BasicNameValuePair("limit", "50"),
-            new BasicNameValuePair("format", "json"),
-            new BasicNameValuePair("order_by", "ScoreboardPlayers.DateTime_UTC DESC"),
-            new BasicNameValuePair("action", "cargoquery"),
-            new BasicNameValuePair("where", whereClause),
-            new BasicNameValuePair("fields", String.join(",",  GAME_QUERY_FIELDS)),
-            new BasicNameValuePair("join_on", "ScoreboardPlayers.GameId=ScoreboardGames.GameId")
-        );
+        params.add("maxlag","5");
+        params.add("tables", String.join(",", GAME_QUERY_TABLES));
+        params.add("limit", "50");
+        params.add("format", "json");
+        params.add("order_by", "ScoreboardPlayers.DateTime_UTC DESC");
+        params.add("action", "cargoquery");
+        params.add("where", whereClause);
+        params.add("fields", String.join(",",  GAME_QUERY_FIELDS));
+        params.add("join_on", "ScoreboardPlayers.GameId=ScoreboardGames.GameId");
 
-        URI uri;
-
-        try {
-            uri = new URIBuilder()
-                .setScheme(SCHEMA)
-                .setHost(HOST)
-                .setPath(PATH)
-                .addParameters(params)
-                .build();
-        } catch (URISyntaxException e) {
-            String message = String.format("Failed to build URI for champion: %s", championName);
-
-            throw new LolFandomException(message, e);
-        }
-
-        return uri;
-    }
-
-    private GameResponse handleResponse(HttpResponse httpResponse) {
-        int statusCode = httpResponse.getStatusLine()
-                                     .getStatusCode();
-
-        if ((statusCode < HttpStatus.SC_OK) || (statusCode >= HttpStatus.SC_MULTIPLE_CHOICES)) {
-            String message = String.format("Received non-200 response: %d", statusCode);
-
-            throw new LolFandomException(message);
-        }
-
-        HttpEntity httpEntity = httpResponse.getEntity();
-
-        String stringEntity;
-
-        try {
-            stringEntity = EntityUtils.toString(httpEntity);
-        } catch (IOException | ParseException e) {
-            String message = "Failed to read game data";
-
-            throw new LolFandomException(message, e);
-        }
-
-        GameResponse gameResponse;
-
-        try {
-            gameResponse = this.objectMapper.readValue(stringEntity, GameResponse.class);
-        } catch (JacksonException e) {
-            String message = "Failed to deserialize game data";
-
-            throw new LolFandomException(message, e);
-        }
-
-        return gameResponse;
+        return UriComponentsBuilder.newInstance()
+                                   .scheme(SCHEME)
+                                   .host(HOST)
+                                   .path(PATH)
+                                   .queryParams(params)
+                                   .build()
+                                   .toUri();
     }
 }

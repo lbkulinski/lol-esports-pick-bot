@@ -1,21 +1,22 @@
 package net.lbku.lol.model;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Value;
 import org.jspecify.annotations.NullMarked;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbImmutable;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
-@Value
+import java.util.Objects;
+
 @Builder(toBuilder = true)
-@NullMarked
 @DynamoDbImmutable(builder = ChampionConfiguration.ChampionConfigurationBuilder.class)
-public class ChampionConfiguration {
-    @Getter(onMethod_ = @DynamoDbPartitionKey)
-    String id;
-
-    String displayName;
-
-    boolean enabled;
+@NullMarked
+public record ChampionConfiguration(
+    @DynamoDbPartitionKey String id,
+    String displayName,
+    boolean enabled
+) {
+    public ChampionConfiguration {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(displayName);
+    }
 }
