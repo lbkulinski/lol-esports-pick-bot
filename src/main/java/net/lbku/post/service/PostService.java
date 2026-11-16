@@ -25,6 +25,7 @@ import java.util.Optional;
 @Slf4j
 public final class PostService {
     private static final String POST_TEMPLATE = "%s played %s at %s!";
+    private static final String TITLE_TEMPLATE = "%s's Draven - %s";
 
     private final SecretsClient secretsClient;
     private final ChampionConfigurationRepository configRepository;
@@ -100,7 +101,9 @@ public final class PostService {
 
     private Record postGame(Session session, ChampionConfiguration config, Game game) {
         var text = POST_TEMPLATE.formatted(game.player(), config.displayName(), game.tournament());
-        var link = new ExternalLink(game.vod(), "", "");
+        var title = TITLE_TEMPLATE.formatted(game.player(), game.tournament());
+
+        var link = new ExternalLink(game.vod(), title, "");
 
         return this.blueskyClient.createRecord(session, text, link);
     }
